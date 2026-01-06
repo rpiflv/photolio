@@ -1,0 +1,105 @@
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { Camera, Eye, Heart } from 'lucide-react'
+import { getFeaturedPhotos } from '../data/photos'
+
+export const Route = createFileRoute('/')({ component: HomePage })
+
+function HomePage() {
+  const featuredPhotos = getFeaturedPhotos()
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <section className="relative h-screen flex items-center justify-center">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1920&h=1080&fit=crop"
+            alt="Hero background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        </div>
+        
+        <div className="relative text-center text-white px-4 max-w-4xl">
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+            Capturing Moments
+          </h1>
+          <p className="text-xl md:text-2xl mb-8 text-gray-200">
+            Through the lens of creativity and passion
+          </p>
+          <Link
+            to="/gallery"
+            className="inline-flex items-center px-8 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+          >
+            View Gallery
+            <Eye className="ml-2 h-5 w-5" />
+          </Link>
+        </div>
+      </section>
+
+      {/* Featured Photos */}
+      <section className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Work</h2>
+            <p className="text-xl text-gray-600">
+              A selection of my favorite photographs
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredPhotos.map((photo) => (
+              <div
+                key={photo.id}
+                className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={photo.src}
+                    alt={photo.alt}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                    <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
+                    <p className="text-sm text-gray-200">{photo.description}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              to="/gallery"
+              className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+            >
+              View All Photos
+              <Camera className="ml-2 h-5 w-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* About Preview */}
+      <section className="py-20 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-8">About the Photographer</h2>
+          <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+            I'm a passionate photographer who believes in the power of visual storytelling. 
+            Every image tells a story, captures an emotion, and preserves a moment in time. 
+            Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.
+          </p>
+          <Link
+            to="/about"
+            className="inline-flex items-center px-6 py-3 border border-gray-900 text-gray-900 rounded-lg font-semibold hover:bg-gray-900 hover:text-white transition-colors"
+          >
+            Learn More
+            <Heart className="ml-2 h-5 w-5" />
+          </Link>
+        </div>
+      </section>
+    </div>
+  )
+}
