@@ -1,22 +1,25 @@
 #!/usr/bin/env node
 import 'dotenv/config'
-import { readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs'
+import { readFileSync, readdirSync, unlinkSync } from 'fs'
 import { join, extname, basename } from 'path'
-import { uploadImageToS3, getImageSizes } from '../src/lib/imageService.js'
+import { uploadImageToS3 } from '../src/lib/imageService.js'
+import { createClient } from '@supabase/supabase-js'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-// Configuration
-const UPLOAD_FOLDER = join(__dirname, 'uploads') // Put images here to upload
-const DATABASE_PATH = join(__dirname, '../src/data/photoDatabase.json')
+// Supabase client
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_SERVICE_KEY
+)
 
-// Supported image formats
+// Configuration
+const UPLOAD_FOLDER = join(__dirname, 'uploads')
 const SUPPORTED_FORMATS = ['.jpg', '.jpeg', '.png', '.webp']
 
-// Function to generate S3 key from filename and category
 function generateS3Key(filename, category) {
   const ext = extname(filename).toLowerCase()
   const name = basename(filename, ext)
@@ -24,14 +27,10 @@ function generateS3Key(filename, category) {
   return `gallery/${category}/${cleanName}${ext}`
 }
 
-// Function to prompt for photo metadata
 function promptForMetadata(filename) {
-  // In a real implementation, you'd use a library like 'inquirer' for interactive prompts
-  // For now, we'll return default metadata
-  const category = 'other' // You can make this interactive
+  const category = 'other'
   
   return {
-    id: `photo-${Date.now()}`,
     title: basename(filename, extname(filename)).replace(/[-_]/g, ' '),
     description: '',
     category: category,
@@ -45,10 +44,8 @@ function promptForMetadata(filename) {
   }
 }
 
-// Function to upload photos and update database
 async function uploadPhotos() {
   try {
-    // Check if upload folder exists
     let files
     try {
       files = readdirSync(UPLOAD_FOLDER)
@@ -68,26 +65,14 @@ async function uploadPhotos() {
 
     console.log(`Found ${imageFiles.length} image(s) to upload...`)
 
-    // Load existing database
-    let database
-    try {
-      const dbContent = readFileSync(DATABASE_PATH, 'utf8')
-      database = JSON.parse(dbContent)
-    } catch (error) {
-      console.log('Creating new photo database...')
-      database = { photos: [], categories: [] }
-    }
-
     const uploadedFiles = []
 
-    // Upload each image
     for (const filename of imageFiles) {
       console.log(`Processing ${filename}...`)
       
       const filePath = join(UPLOAD_FOLDER, filename)
       const imageBuffer = readFileSync(filePath)
       
-      // Get metadata (in a real app, you'd prompt the user)
       const metadata = promptForMetadata(filename)
       const s3Key = generateS3Key(filename, metadata.category)
       
@@ -105,43 +90,32 @@ async function uploadPhotos() {
           }
         )
         
-        // Add to database
-        const photoEntry = {
-          ...metadata,
-          s3Key: s3Key,
-          url: url
+        // Insert into Supabase
+        const { error } = await supabase.from('photos').insert({
+          title: metadata.title,
+          description: metadata.description || null,
+          s3_key: s3Key,
+          category: metadata.category,
+          date: metadata.date,
+          featured: metadata.featured,
+          tags: metadata.tags,
+          location: metadata.location || null,
+          camera: metadata.camera || null,
+          lens: metadata.lens || null,
+          settings: metadata.settings
+        })
+
+        if (error) {
+          console.error(`❌ Failed to save to database: ${error.message}`)
+        } else {
+          console.log(`✅ Uploaded: ${filename} -> ${s3Key}`)
+          uploadedFiles.push(filePath)
         }
-        
-        database.photos.push(photoEntry)
-        console.log(`✅ Uploaded: ${filename} -> ${s3Key}`)
-        
-        // Track successfully uploaded files
-        uploadedFiles.push(filePath)
       } catch (error) {
         console.error(`❌ Failed to upload ${filename}:`, error.message)
       }
     }
 
-    // Update category counts
-    const categoryMap = {}
-    database.photos.forEach(photo => {
-      categoryMap[photo.category] = (categoryMap[photo.category] || 0) + 1
-    })
-
-    database.categories = [
-      { id: 'all', name: 'All Photos', description: 'All photographs in the portfolio' },
-      { id: 'portrait', name: 'Portrait', description: 'Professional portrait photography' },
-      { id: 'landscape', name: 'Landscape', description: 'Natural landscape photography' },
-      { id: 'street', name: 'Street', description: 'Urban street photography' },
-      { id: 'nature', name: 'Nature', description: 'Wildlife and nature photography' },
-      { id: 'architecture', name: 'Architecture', description: 'Architectural photography' },
-      { id: 'other', name: 'Other', description: 'Miscellaneous photography' }
-    ]
-
-    // Save updated database
-    writeFileSync(DATABASE_PATH, JSON.stringify(database, null, 2))
-    console.log(`\n✅ Updated database with ${uploadedFiles.length} new photo(s)`)
-    
     // Delete successfully uploaded files
     if (uploadedFiles.length > 0) {
       console.log(`\n🗑️  Cleaning up uploaded files...`)
@@ -155,12 +129,12 @@ async function uploadPhotos() {
       })
     }
     
-    console.log('\n📝 Please review and edit the photo metadata in photoDatabase.json')
+    console.log(`\n✅ Successfully uploaded ${uploadedFiles.length} photo(s)`)
+    console.log('📝 You can edit photo metadata in Supabase dashboard')
 
   } catch (error) {
     console.error('Error uploading photos:', error)
   }
 }
 
-// Run the upload script
 uploadPhotos()

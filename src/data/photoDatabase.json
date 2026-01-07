@@ -1,87 +1,6 @@
 {
   "photos": [
     {
-      "id": "photo-001",
-      "title": "Golden Hour Portrait",
-      "description": "A stunning portrait captured during golden hour with natural lighting",
-      "s3Key": "gallery/portraits/golden-hour-portrait.jpg",
-      "category": "portrait",
-      "date": "2024-03-15",
-      "featured": true,
-      "tags": [
-        "golden hour",
-        "natural light",
-        "outdoor"
-      ],
-      "location": "Central Park, New York",
-      "camera": "Canon EOS R5",
-      "lens": "85mm f/1.4",
-      "settings": {
-        "aperture": "f/1.8",
-        "shutter": "1/250s",
-        "iso": 200,
-        "focalLength": "85mm"
-      },
-      "dimensions": {
-        "width": 3000,
-        "height": 4000
-      }
-    },
-    {
-      "id": "photo-002",
-      "title": "Mountain Vista",
-      "description": "Breathtaking mountain landscape at sunrise",
-      "s3Key": "gallery/landscapes/mountain-vista.jpg",
-      "category": "landscape",
-      "date": "2024-03-10",
-      "featured": true,
-      "tags": [
-        "mountains",
-        "sunrise",
-        "landscape"
-      ],
-      "location": "Rocky Mountain National Park",
-      "camera": "Sony A7R IV",
-      "lens": "24-70mm f/2.8",
-      "settings": {
-        "aperture": "f/8",
-        "shutter": "1/60s",
-        "iso": 100,
-        "focalLength": "35mm"
-      },
-      "dimensions": {
-        "width": 4000,
-        "height": 3000
-      }
-    },
-    {
-      "id": "photo-003",
-      "title": "Urban Streets",
-      "description": "Capturing the energy of city life",
-      "s3Key": "gallery/street/urban-streets.jpg",
-      "category": "street",
-      "date": "2024-03-08",
-      "featured": true,
-      "tags": [
-        "street photography",
-        "urban",
-        "cityscape"
-      ],
-      "location": "Times Square, New York",
-      "camera": "Canon EOS R6",
-      "lens": "35mm f/1.4",
-      "settings": {
-        "aperture": "f/2.8",
-        "shutter": "1/125s",
-        "iso": 800,
-        "focalLength": "35mm"
-      },
-      "dimensions": {
-        "width": 3500,
-        "height": 2500
-      }
-    },
-    {
       "id": "photo-1767682453313",
       "title": "R1037792 01",
       "description": "",
@@ -93,8 +12,7 @@
       "camera": "",
       "lens": "",
       "settings": {},
-      "s3Key": "gallery/other/r1037792-01.jpg",
-      "url": "https://your-cloudfront-domain.cloudfront.net/gallery/other/r1037792-01.jpg"
+      "s3Key": "gallery/other/r1037792-01.jpg"
     },
     {
       "id": "photo-1767682454259",
@@ -108,8 +26,7 @@
       "camera": "",
       "lens": "",
       "settings": {},
-      "s3Key": "gallery/other/r1037902-jpg.jpg",
-      "url": "https://your-cloudfront-domain.cloudfront.net/gallery/other/r1037902-jpg.jpg"
+      "s3Key": "gallery/other/r1037902-jpg.jpg"
     },
     {
       "id": "photo-1767682454506",
@@ -123,8 +40,7 @@
       "camera": "",
       "lens": "",
       "settings": {},
-      "s3Key": "gallery/other/r1138522.jpg",
-      "url": "https://your-cloudfront-domain.cloudfront.net/gallery/other/r1138522.jpg"
+      "s3Key": "gallery/other/r1138522.jpg"
     }
   ],
   "categories": [

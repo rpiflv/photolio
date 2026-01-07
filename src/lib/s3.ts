@@ -1,41 +1,54 @@
 import { S3Client } from '@aws-sdk/client-s3'
 
+// Helper to get env variable (works in both Node.js and browser)
+const getEnv = (key: string): string | undefined => {
+  // Try process.env first (Node.js)
+  if (typeof process !== 'undefined' && process.env && process.env[key]) {
+    return process.env[key]
+  }
+  // Try import.meta.env (Vite/browser)
+  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key]
+  }
+  return undefined
+}
+
 // S3 Configuration
+const awsRegion = getEnv('VITE_AWS_REGION')
+const awsAccessKeyId = getEnv('VITE_AWS_ACCESS_KEY_ID')
+const awsSecretAccessKey = getEnv('VITE_AWS_SECRET_ACCESS_KEY')
+const bucketName = getEnv('VITE_S3_BUCKET_NAME')
+
+if (!awsRegion || !awsAccessKeyId || !awsSecretAccessKey || !bucketName) {
+  console.error('Missing AWS environment variables:', {
+    region: awsRegion,
+    accessKeyId: awsAccessKeyId ? 'set' : 'missing',
+    secretAccessKey: awsSecretAccessKey ? 'set' : 'missing',
+    bucketName: bucketName
+  })
+}
+
 export const s3Config = {
-  region: import.meta.env.VITE_AWS_REGION || 'us-east-1',
+  region: awsRegion || 'us-east-1',
   credentials: {
-    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY || '',
+    accessKeyId: awsAccessKeyId || '',
+    secretAccessKey: awsSecretAccessKey || '',
   },
 }
 
-export const BUCKET_NAME = import.meta.env.VITE_S3_BUCKET_NAME || 'your-photo-portfolio-bucket'
-export const CLOUDFRONT_DOMAIN = import.meta.env.VITE_CLOUDFRONT_DOMAIN || ''
+export const BUCKET_NAME = bucketName || 'your-photo-portfolio-bucket'
 
 // Create S3 client
 export const s3Client = new S3Client(s3Config)
 
-// Helper function to get image URL
+// Helper function to get image URL directly from S3
 export const getImageUrl = (key: string): string => {
-  if (CLOUDFRONT_DOMAIN) {
-    return `https://${CLOUDFRONT_DOMAIN}/${key}`
-  }
   return `https://${BUCKET_NAME}.s3.${s3Config.region}.amazonaws.com/${key}`
 }
 
-// Helper function to get optimized image URL with CloudFront parameters
+// Helper function to get optimized image URL (same as base URL since we're not using CloudFront)
 export const getOptimizedImageUrl = (key: string, width?: number, height?: number, quality?: number): string => {
-  const baseUrl = getImageUrl(key)
-  
-  if (!CLOUDFRONT_DOMAIN || (!width && !height && !quality)) {
-    return baseUrl
-  }
-
-  // If using CloudFront with image optimization
-  const params = new URLSearchParams()
-  if (width) params.append('w', width.toString())
-  if (height) params.append('h', height.toString())
-  if (quality) params.append('q', quality.toString())
-  
-  return params.toString() ? `${baseUrl}?${params.toString()}` : baseUrl
+  // Without CloudFront, we just return the base S3 URL
+  // You can implement client-side resizing or use an image processing service if needed
+  return getImageUrl(key)
 }

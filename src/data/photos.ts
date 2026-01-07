@@ -1,5 +1,6 @@
 import { getImageUrl, getOptimizedImageUrl } from '../lib/s3'
-import photoDatabase from './photoDatabase.json'
+import { supabase } from '../lib/supabase'
+import type { Photo as DBPhoto } from '../lib/supabase'
 
 export interface Photo {
   id: string
@@ -16,6 +17,7 @@ export interface Photo {
   }
   thumbnailSrc?: string
   s3Key?: string
+  price?: number
   metadata?: {
     location?: string
     camera?: string
@@ -29,50 +31,118 @@ export interface Photo {
   }
 }
 
-// Convert JSON photo data to Photo interface
-function jsonPhotoToPhoto(jsonPhoto: any): Photo {
+// Convert database photo to Photo interface
+function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
   return {
-    id: jsonPhoto.id,
-    title: jsonPhoto.title,
-    description: jsonPhoto.description,
-    src: getImageUrl(jsonPhoto.s3Key),
-    alt: jsonPhoto.description || jsonPhoto.title,
-    category: jsonPhoto.category,
-    date: jsonPhoto.date,
-    featured: jsonPhoto.featured || false,
-    dimensions: jsonPhoto.dimensions,
-    thumbnailSrc: getOptimizedImageUrl(jsonPhoto.s3Key, 400, 400, 80),
-    s3Key: jsonPhoto.s3Key,
+    id: dbPhoto.id,
+    title: dbPhoto.title,
+    description: dbPhoto.description || undefined,
+    src: getImageUrl(dbPhoto.s3_key),
+    alt: dbPhoto.description || dbPhoto.title,
+    category: dbPhoto.category as any,
+    date: dbPhoto.date,
+    featured: dbPhoto.featured,
+    thumbnailSrc: getOptimizedImageUrl(dbPhoto.s3_key, 400, 400, 80),
+    s3Key: dbPhoto.s3_key,
+    price: dbPhoto.price || undefined,
     metadata: {
-      location: jsonPhoto.location,
-      camera: jsonPhoto.camera,
-      lens: jsonPhoto.lens,
-      settings: jsonPhoto.settings,
+      location: dbPhoto.location || undefined,
+      camera: dbPhoto.camera || undefined,
+      lens: dbPhoto.lens || undefined,
+      settings: dbPhoto.settings as any,
     }
   }
 }
 
-// Load photos from the database
-export const photos: Photo[] = photoDatabase.photos.map((photo: any) => jsonPhotoToPhoto(photo))
+// Fetch all photos from Supabase
+export async function getPhotos(): Promise<Photo[]> {
+  const { data, error } = await supabase
+    .from('photos')
+    .select('*')
+    .order('date', { ascending: false })
 
-export const categories = [
-  { id: 'all', name: 'All Photos', count: photos.length },
-  { id: 'portrait', name: 'Portrait', count: photos.filter(p => p.category === 'portrait').length },
-  { id: 'landscape', name: 'Landscape', count: photos.filter(p => p.category === 'landscape').length },
-  { id: 'street', name: 'Street', count: photos.filter(p => p.category === 'street').length },
-  { id: 'nature', name: 'Nature', count: photos.filter(p => p.category === 'nature').length },
-  { id: 'architecture', name: 'Architecture', count: photos.filter(p => p.category === 'architecture').length },
-  { id: 'other', name: 'Other', count: photos.filter(p => p.category === 'other').length },
-]
+  if (error) {
+    console.error('Error fetching photos:', error)
+    return []
+  }
 
-export const getFeaturedPhotos = () => photos.filter(photo => photo.featured)
+  return data.map(dbPhotoToPhoto)
+}
 
-export const getPhotosByCategory = (category: string) => 
-  category === 'all' ? photos : photos.filter(photo => photo.category === category)
+// Get featured photos (randomly select 3)
+export async function getFeaturedPhotos(): Promise<Photo[]> {
+  const photos = await getPhotos()
+  
+  // Use today's date as seed for consistent daily selection
+  const today = new Date()
+  const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate()
+  
+  const shuffled = [...photos].sort((a, b) => {
+    const hashA = a.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), seed)
+    const hashB = b.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), seed)
+    return Math.sin(hashA) - Math.sin(hashB)
+  })
+  
+  return shuffled.slice(0, Math.min(3, shuffled.length))
+}
 
-export const getPhotoById = (id: string) => photos.find(photo => photo.id === id)
+// Get photos by category
+export async function getPhotosByCategory(category: string): Promise<Photo[]> {
+  if (category === 'all') {
+    return getPhotos()
+  }
 
-// Get responsive image URLs for different screen sizes
+  const { data, error } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('category', category)
+    .order('date', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching photos by category:', error)
+    return []
+  }
+
+  return data.map(dbPhotoToPhoto)
+}
+
+// Get photo by ID
+export async function getPhotoById(id: string): Promise<Photo | null> {
+  const { data, error } = await supabase
+    .from('photos')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (error) {
+    console.error('Error fetching photo:', error)
+    return null
+  }
+
+  return dbPhotoToPhoto(data)
+}
+
+// Get categories with counts
+export async function getCategories() {
+  const { data: categories } = await supabase.from('categories').select('*')
+  const { data: photos } = await supabase.from('photos').select('category')
+
+  const counts: Record<string, number> = {}
+  photos?.forEach(photo => {
+    counts[photo.category] = (counts[photo.category] || 0) + 1
+  })
+
+  return [
+    { id: 'all', name: 'All Photos', count: photos?.length || 0 },
+    ...(categories?.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      count: counts[cat.id] || 0
+    })) || [])
+  ]
+}
+
+// Get responsive image URLs
 export const getResponsiveImageUrls = (s3Key: string) => ({
   small: getOptimizedImageUrl(s3Key, 400, undefined, 75),
   medium: getOptimizedImageUrl(s3Key, 800, undefined, 80),

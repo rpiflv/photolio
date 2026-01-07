@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Camera, Award, MapPin, Calendar } from 'lucide-react'
+import { Camera, Award, MapPin, Calendar, User } from 'lucide-react'
 
 export const Route = createFileRoute('/about')({ component: AboutPage })
 
@@ -9,11 +9,9 @@ function AboutPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <img
-            src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face"
-            alt="Photographer portrait"
-            className="w-32 h-32 rounded-full mx-auto mb-8 shadow-lg"
-          />
+          <div className="w-32 h-32 rounded-full mx-auto mb-8 shadow-lg bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center">
+            <User className="w-16 h-16 text-white" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">About Me</h1>
           <p className="text-xl text-gray-600">
             Passionate photographer capturing life's beautiful moments
@@ -99,7 +97,7 @@ function AboutPage() {
                 <li>• Portrait Photography</li>
                 <li>• Landscape & Nature</li>
                 <li>• Street Photography</li>
-                <li>• Event & Wedding Photography</li>
+                <li>• Architecture</li>
               </ul>
             </div>
           </div>

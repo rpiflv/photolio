@@ -1,101 +1,162 @@
 import { Link } from '@tanstack/react-router'
+import { Camera, Menu, X, User, LogOut } from 'lucide-react'
 import { useState } from 'react'
-import {
-  Camera,
-  Home,
-  Menu,
-  User,
-  Mail,
-  Images,
-  X,
-} from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Header() {
-  const [isOpen, setIsOpen] = useState(false)
-
-  const navigation = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Gallery', href: '/gallery', icon: Images },
-    { name: 'About', href: '/about', icon: User },
-    { name: 'Contact', href: '/contact', icon: Mail },
-  ]
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   return (
-    <>
-      <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <Camera className="h-8 w-8 text-gray-900" />
-              <span className="text-xl font-bold text-gray-900">PhotoFolio</span>
+    <header className="bg-white shadow-sm sticky top-0 z-50">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <Camera className="h-8 w-8 text-gray-900" />
+            <span className="text-xl font-bold text-gray-900">PhotoFolio</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <Link
+              to="/"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+            >
+              Home
+            </Link>
+            <Link
+              to="/gallery"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+            >
+              Gallery
+            </Link>
+            <Link
+              to="/favorites"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+            >
+              Favorites
+            </Link>
+            <Link
+              to="/about"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+            >
+              About
+            </Link>
+            <Link
+              to="/contact"
+              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+            >
+              Contact
             </Link>
 
-            <nav className="hidden md:flex space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                  activeProps={{
-                    className: 'text-gray-900 border-b-2 border-gray-900'
-                  }}
+            {/* Auth buttons */}
+            {user ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600">{user.email}</span>
+                <button
+                  onClick={() => signOut()}
+                  className="flex items-center space-x-1 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-
-            <button
-              onClick={() => setIsOpen(true)}
-              className="md:hidden p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-              aria-label="Open menu"
-            >
-              <Menu size={24} />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div
-        className={`fixed inset-0 z-50 transition-opacity duration-300 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-      >
-        <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsOpen(false)} />
-        
-        <div
-          className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-            isOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-        >
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <span className="text-lg font-semibold text-gray-900">Menu</span>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          
-          <nav className="p-4">
-            {navigation.map((item) => (
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign out</span>
+                </button>
+              </div>
+            ) : (
               <Link
-                key={item.name}
-                to={item.href}
-                className="flex items-center space-x-3 px-3 py-3 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-                onClick={() => setIsOpen(false)}
-                activeProps={{
-                  className: 'bg-gray-100 text-gray-900'
-                }}
+                to="/login"
+                className="flex items-center space-x-1 text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
               >
-                <item.icon size={20} />
-                <span>{item.name}</span>
+                <User className="h-4 w-4" />
+                <span>Sign in</span>
               </Link>
-            ))}
-          </nav>
+            )}
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
         </div>
-      </div>
-    </>
+
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="md:hidden pb-4">
+            <div className="flex flex-col space-y-2">
+              <Link
+                to="/"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Home
+              </Link>
+              <Link
+                to="/gallery"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Gallery
+              </Link>
+              <Link
+                to="/favorites"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Favorites
+              </Link>
+              <Link
+                to="/about"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+
+              {user ? (
+                <>
+                  <div className="px-3 py-2 text-sm text-gray-600">{user.email}</div>
+                  <button
+                    onClick={() => {
+                      signOut()
+                      setIsMenuOpen(false)
+                    }}
+                    className="text-left text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  >
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
   )
 }

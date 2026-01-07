@@ -1,22 +1,35 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Camera, Eye, Heart } from 'lucide-react'
-import { getFeaturedPhotos } from '../data/photos'
+import { getFeaturedPhotos, getPhotos } from '../data/photos'
 
-export const Route = createFileRoute('/')({ component: HomePage })
+export const Route = createFileRoute('/')({
+  loader: async () => {
+    const [featuredPhotos, allPhotos] = await Promise.all([
+      getFeaturedPhotos(),
+      getPhotos()
+    ])
+    return { featuredPhotos, heroPhoto: allPhotos[0] || null }
+  },
+  component: HomePage
+})
 
 function HomePage() {
-  const featuredPhotos = getFeaturedPhotos()
+  const { featuredPhotos, heroPhoto } = Route.useLoaderData()
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center">
         <div className="absolute inset-0">
-          <img
-            src="https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=1920&h=1080&fit=crop"
-            alt="Hero background"
-            className="w-full h-full object-cover"
-          />
+          {heroPhoto ? (
+            <img
+              src={heroPhoto.src}
+              alt={heroPhoto.alt}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700"></div>
+          )}
           <div className="absolute inset-0 bg-black bg-opacity-40"></div>
         </div>
         
@@ -47,28 +60,34 @@ function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredPhotos.map((photo) => (
-              <div
-                key={photo.id}
-                className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={photo.src}
-                    alt={photo.alt}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
-                    <p className="text-sm text-gray-200">{photo.description}</p>
+          {featuredPhotos.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredPhotos.map((photo) => (
+                <div
+                  key={photo.id}
+                  className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <div className="aspect-square overflow-hidden">
+                    <img
+                      src={photo.src}
+                      alt={photo.alt}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                      <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
+                      {photo.description && <p className="text-sm text-gray-200">{photo.description}</p>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-gray-500">
+              <p className="text-xl">No photos available yet. Upload some photos to get started!</p>
+            </div>
+          )}
 
           <div className="text-center mt-12">
             <Link
