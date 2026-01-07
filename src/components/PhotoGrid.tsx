@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import PhotoModal from './PhotoModal'
-import { Heart } from 'lucide-react'
+import { Star } from 'lucide-react' // Changed from Heart to Star
 import { useFavorites } from '../hooks/useFavorites'
 import { useAuth } from '../contexts/AuthContext'
 import type { Photo } from '../data/photos'
@@ -40,16 +40,16 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
               loading="lazy"
             />
             
-            {/* Favorite Button */}
+            {/* Favorite Button - Changed to Star */}
             {user && (
               <button
                 onClick={(e) => handleFavoriteClick(e, photo.id)}
-                className="absolute top-4 right-4 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all z-10"
+                className="absolute top-4 right-4 p-2 hover:opacity-80 hover:bg-white rounded-full transition-all z-10"
               >
-                <Heart
+                <Star
                   className={`h-5 w-5 ${
                     isFavorited(photo.id)
-                      ? 'fill-red-500 text-red-500'
+                      ? 'fill-yellow-400 text-yellow-400' // Changed from red to yellow
                       : 'text-gray-600'
                   }`}
                 />

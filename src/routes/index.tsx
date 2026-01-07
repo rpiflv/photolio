@@ -17,7 +17,7 @@ function HomePage() {
   const { featuredPhotos, heroPhoto } = Route.useLoaderData()
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen"> {/* Removed bg-gray-50 */}
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center">
         <div className="absolute inset-0">
@@ -30,7 +30,7 @@ function HomePage() {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700"></div>
           )}
-          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+          <div className="absolute inset-0 bg-opacity-40"></div>
         </div>
         
         <div className="relative text-center text-white px-4 max-w-4xl">
@@ -38,7 +38,7 @@ function HomePage() {
             Capturing Moments
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
-            Through the lens of creativity and passion
+            Through the lenses of my camera, I tell stories that words cannot express.
           </p>
           <Link
             to="/gallery"
@@ -63,9 +63,10 @@ function HomePage() {
           {featuredPhotos.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredPhotos.map((photo) => (
-                <div
+                <Link
                   key={photo.id}
-                  className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                  to="/gallery"
+                  className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   <div className="aspect-square overflow-hidden">
                     <img
@@ -80,7 +81,7 @@ function HomePage() {
                       {photo.description && <p className="text-sm text-gray-200">{photo.description}</p>}
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           ) : (
@@ -102,7 +103,7 @@ function HomePage() {
       </section>
 
       {/* About Preview */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white/90 backdrop-blur-sm"> {/* Changed from bg-white to semi-transparent */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">About the Photographer</h2>
           <p className="text-xl text-gray-600 mb-8 leading-relaxed">
