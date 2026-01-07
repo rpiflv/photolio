@@ -5,9 +5,21 @@ dist-ssr
 *.local
 count.txt
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 .nitro
 .tanstack
 .wrangler
 .output
 .vinxi
 todos.json
+
+# Upload directories
+scripts/uploads/
+uploads/
+
+# AWS credentials (never commit these)
+.aws/
+aws-credentials.json

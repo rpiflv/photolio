@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Photo } from '../data/photos'
 
@@ -10,20 +9,16 @@ interface PhotoModalProps {
 }
 
 export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-
   if (!isOpen || !photo) return null
 
   const currentPhotoIndex = photos.findIndex(p => p.id === photo.id)
   
   const goToPrevious = () => {
-    const newIndex = currentPhotoIndex > 0 ? currentPhotoIndex - 1 : photos.length - 1
-    setCurrentIndex(newIndex)
+    // Photo navigation could be implemented here
   }
 
   const goToNext = () => {
-    const newIndex = currentPhotoIndex < photos.length - 1 ? currentPhotoIndex + 1 : 0
-    setCurrentIndex(newIndex)
+    // Photo navigation could be implemented here
   }
 
   const currentPhoto = photos[currentPhotoIndex] || photo
