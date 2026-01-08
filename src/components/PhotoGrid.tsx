@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import PhotoModal from './PhotoModal'
-import { Star } from 'lucide-react' // Changed from Heart to Star
+import { Star, Loader2 } from 'lucide-react' // Changed from Heart to Star
 import { useFavorites } from '../hooks/useFavorites'
 import { useAuth } from '../contexts/AuthContext'
 import type { Photo } from '../data/photos'
@@ -11,8 +11,13 @@ interface PhotoGridProps {
 
 export default function PhotoGrid({ photos }: PhotoGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const { user } = useAuth()
   const { isFavorited, toggleFavorite } = useFavorites()
+
+  const handleImageLoad = (photoId: string) => {
+    setLoadedImages(prev => new Set(prev).add(photoId))
+  }
 
   const handleFavoriteClick = async (e: React.MouseEvent, photoId: string) => {
     e.stopPropagation()
@@ -33,11 +38,21 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
             className="group relative aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer bg-gray-100"
             onClick={() => setSelectedPhoto(photo)}
           >
+            {/* Loading Spinner */}
+            {!loadedImages.has(photo.id) && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+              </div>
+            )}
+            
             <img
               src={photo.thumbnailSrc || photo.src}
               alt={photo.alt}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
+                loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+              }`}
               loading="lazy"
+              onLoad={() => handleImageLoad(photo.id)}
             />
             
             {/* Favorite Button - Changed to Star */}

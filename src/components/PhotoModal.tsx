@@ -1,4 +1,4 @@
-import { X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Photo } from '../data/photos'
 import { useState, useEffect, useRef } from 'react'
 
@@ -18,7 +18,12 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     return 0
   })
   const [isTransitioning, setIsTransitioning] = useState(true)
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const imgRef = useRef<HTMLImageElement>(null)
+
+  const handleImageLoad = (photoId: string) => {
+    setLoadedImages(prev => new Set(prev).add(photoId))
+  }
 
   useEffect(() => {
     if (photo) {
@@ -99,12 +104,22 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         {/* Photo with passepartout */}
         <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl">
           <div className="relative min-h-[50vh] flex items-center justify-center">
+            {/* Loading Spinner */}
+            {!loadedImages.has(currentPhoto.id) && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
+              </div>
+            )}
+            
             <img
               ref={imgRef}
               key={currentPhoto.id}
               src={currentPhoto.src}
               alt={currentPhoto.alt}
-              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[300ms] ${isTransitioning ? 'blur-xl scale-95' : 'blur-0 scale-100'}`}
+              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[300ms] ${
+                loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
+              } ${isTransitioning ? 'blur-xl scale-95' : 'blur-0 scale-100'}`}
+              onLoad={() => handleImageLoad(currentPhoto.id)}
             />
           </div>
 
