@@ -16,6 +16,9 @@ count.txt
 .vinxi
 todos.json
 
+# Auto-generated files
+src/routeTree.gen.ts
+
 # Upload directories
 scripts/uploads/
 uploads/
