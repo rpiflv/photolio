@@ -114,6 +114,7 @@ export async function uploadImageToS3(
       Body: imageBuffer,
       ContentType: contentType,
       Metadata: metadata,
+      CacheControl: 'public, max-age=31536000, immutable', // 1 year cache
     })
 
     await s3Client.send(command)

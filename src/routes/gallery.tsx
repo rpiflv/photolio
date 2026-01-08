@@ -1,27 +1,31 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import PhotoGrid from '../components/PhotoGrid'
-import { getPhotos, getCategories } from '../data/photos'
+import { getPhotos, getPhotosByCategory, getCategories, photoQueryKeys } from '../data/photos'
 
 export const Route = createFileRoute('/gallery')({
-  loader: async () => {
-    const [photos, categories] = await Promise.all([
-      getPhotos(),
-      getCategories(),
-    ])
-    return { photos, categories }
-  },
   component: GalleryPage,
 })
 
 function GalleryPage() {
-  const { photos, categories } = Route.useLoaderData()
   const [selectedCategory, setSelectedCategory] = useState('all')
 
-  const filteredPhotos =
-    selectedCategory === 'all'
-      ? photos
-      : photos.filter((photo) => photo.category === selectedCategory)
+  // Fetch categories with caching
+  const { data: categories = [] } = useQuery({
+    queryKey: photoQueryKeys.categories(),
+    queryFn: getCategories,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  })
+
+  // Fetch photos based on selected category with caching
+  const { data: photos = [] } = useQuery({
+    queryKey: photoQueryKeys.list(selectedCategory),
+    queryFn: () => selectedCategory === 'all' ? getPhotos() : getPhotosByCategory(selectedCategory),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  const filteredPhotos = photos
 
   return (
     <div className="min-h-screen bg-gray-50 py-16">

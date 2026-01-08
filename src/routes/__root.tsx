@@ -1,11 +1,24 @@
 import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import Header from '../components/Header'
 import { AuthProvider } from '../contexts/AuthContext'
 
 import appCss from '../styles.css?url'
+
+// Create a client with optimized caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 export const Route = createRootRoute({
   head: () => ({
@@ -47,12 +60,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="bg-gray-50">
-        <AuthProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <TanStackDevtools
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <Header />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <TanStackDevtools
             config={{
               position: 'bottom-right',
             }}
@@ -63,7 +77,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               },
             ]}
           />
-        </AuthProvider>
+          </AuthProvider>
+        </QueryClientProvider>
         <Scripts />
       </body>
     </html>

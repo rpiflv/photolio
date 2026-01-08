@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { Camera, Menu, X, User, LogOut } from 'lucide-react'
+import { Aperture, Menu, X, User, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -13,7 +13,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <Camera className="h-8 w-8 text-gray-900" />
+            <Aperture className="h-8 w-8 text-gray-900" />
             <span className="text-xl font-bold text-gray-900">PhotoFolio</span>
           </Link>
 

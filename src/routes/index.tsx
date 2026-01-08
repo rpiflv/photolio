@@ -1,36 +1,30 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { Camera, Eye, Heart } from 'lucide-react'
-import { getFeaturedPhotos, getPhotos } from '../data/photos'
+import { getFeaturedPhotos, photoQueryKeys } from '../data/photos'
+import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({
-  loader: async () => {
-    const [featuredPhotos, allPhotos] = await Promise.all([
-      getFeaturedPhotos(),
-      getPhotos()
-    ])
-    return { featuredPhotos, heroPhoto: allPhotos[0] || null }
-  },
   component: HomePage
 })
 
 function HomePage() {
-  const { featuredPhotos, heroPhoto } = Route.useLoaderData()
-
+  // Use TanStack Query for caching
+  const { data: featuredPhotos = [] } = useQuery({
+    queryKey: photoQueryKeys.featured(),
+    queryFn: getFeaturedPhotos,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
   return (
     <div className="min-h-screen"> {/* Removed bg-gray-50 */}
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center">
         <div className="absolute inset-0">
-          {heroPhoto ? (
-            <img
-              src={heroPhoto.src}
-              alt={heroPhoto.alt}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-700"></div>
-          )}
-          <div className="absolute inset-0 bg-opacity-40"></div>
+          <img
+            src="/images/hero/hero-background.jpg"
+            alt="Photography hero background"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/40"></div>
         </div>
         
         <div className="relative text-center text-white px-4 max-w-4xl">

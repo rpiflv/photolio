@@ -2,6 +2,17 @@ import { getImageUrl, getOptimizedImageUrl } from '../lib/s3'
 import { supabase } from '../lib/supabase'
 import type { Photo as DBPhoto } from '../lib/supabase'
 
+// Query keys for TanStack Query
+export const photoQueryKeys = {
+  all: ['photos'] as const,
+  lists: () => [...photoQueryKeys.all, 'list'] as const,
+  list: (filters?: string) => [...photoQueryKeys.lists(), filters] as const,
+  details: () => [...photoQueryKeys.all, 'detail'] as const,
+  detail: (id: string) => [...photoQueryKeys.details(), id] as const,
+  featured: () => [...photoQueryKeys.all, 'featured'] as const,
+  categories: () => ['categories'] as const,
+}
+
 export interface Photo {
   id: string
   title: string
