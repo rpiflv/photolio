@@ -1,6 +1,6 @@
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Photo } from '../data/photos'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface PhotoModalProps {
   photo: Photo | null
@@ -10,8 +10,15 @@ interface PhotoModalProps {
 }
 
 export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [imageLoaded, setImageLoaded] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    if (photo) {
+      const index = photos.findIndex(p => p.id === photo.id)
+      return index !== -1 ? index : 0
+    }
+    return 0
+  })
+  const [isTransitioning, setIsTransitioning] = useState(true)
+  const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
     if (photo) {
@@ -22,10 +29,14 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     }
   }, [photo, photos])
 
-  // Reset loading state when index changes
+  const currentPhoto = photos[currentIndex] || photo
+
+  // Add blur transition when photo changes
   useEffect(() => {
-    setImageLoaded(false)
-  }, [currentIndex])
+    setIsTransitioning(true)
+    const timer = setTimeout(() => setIsTransitioning(false), 500)
+    return () => clearTimeout(timer)
+  }, [currentPhoto.id])
 
   if (!isOpen || !photo) return null
 
@@ -36,8 +47,6 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   const goToNext = () => {
     setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))
   }
-
-  const currentPhoto = photos[currentIndex] || photo
 
   // Keyboard navigation
   useEffect(() => {
@@ -84,15 +93,16 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl">
           <div className="relative min-h-[50vh] flex items-center justify-center">
             <img
+              ref={imgRef}
+              key={currentPhoto.id}
               src={currentPhoto.src}
               alt={currentPhoto.alt}
-              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[500ms] ${!imageLoaded ? 'blur-xl scale-105' : 'blur-0 scale-100'}`}
-              onLoad={() => setImageLoaded(true)}
+              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[500ms] ${isTransitioning ? 'blur-xl scale-105' : 'blur-0 scale-100'}`}
             />
           </div>
 
           <div className="text-gray-800 text-center mt-10 px-4 min-h-[120px]">
-            <div className={`transition-opacity duration-[500ms] ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
+            <div className={`transition-opacity duration-[500ms] ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
               <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
               {currentPhoto.description && (
                 <p className="text-sm text-gray-600">{currentPhoto.description}</p>
