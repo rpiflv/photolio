@@ -77,7 +77,23 @@ export async function getPhotos(): Promise<Photo[]> {
     return []
   }
 
-  return data.map(dbPhotoToPhoto)
+  const photos = data.map(dbPhotoToPhoto)
+  
+  // Sort by category: other, street, then alphabetically
+  const categoryOrder: Record<string, number> = {
+    'other': 0,
+    'street': 1,
+    'portrait': 2,
+    'landscape': 3,
+    'nature': 4,
+    'architecture': 5
+  }
+  
+  return photos.sort((a, b) => {
+    const orderA = categoryOrder[a.category] ?? 999
+    const orderB = categoryOrder[b.category] ?? 999
+    return orderA - orderB
+  })
 }
 
 // Get featured photos (randomly select 3)

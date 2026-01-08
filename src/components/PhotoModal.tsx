@@ -33,19 +33,26 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
 
   // Add blur transition when photo changes
   useEffect(() => {
-    setIsTransitioning(true)
-    const timer = setTimeout(() => setIsTransitioning(false), 500)
-    return () => clearTimeout(timer)
-  }, [currentPhoto.id])
+    if (isTransitioning) {
+      const timer = setTimeout(() => setIsTransitioning(false), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isTransitioning])
 
   if (!isOpen || !photo) return null
 
   const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))
+    }, 0)
   }
 
   const goToNext = () => {
-    setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))
+    }, 0)
   }
 
   // Keyboard navigation
@@ -97,7 +104,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               key={currentPhoto.id}
               src={currentPhoto.src}
               alt={currentPhoto.alt}
-              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[500ms] ${isTransitioning ? 'blur-xl scale-105' : 'blur-0 scale-100'}`}
+              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[300ms] ${isTransitioning ? 'blur-xl scale-95' : 'blur-0 scale-100'}`}
             />
           </div>
 
