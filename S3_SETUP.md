@@ -1,6 +1,8 @@
 # S3 Photo Portfolio Setup Guide
 
-This photo portfolio now uses Amazon S3 for image storage, providing better performance, scalability, and professional image hosting.
+> **Note**: This portfolio now uses **Supabase** for photo metadata storage and **S3** for image hosting. This guide covers S3 setup for images only. Photo metadata is managed via Supabase.
+
+This photo portfolio uses Amazon S3 for image storage, providing better performance, scalability, and professional image hosting.
 
 ## Prerequisites
 
@@ -100,7 +102,9 @@ Add this bucket policy to allow public read access to your photos:
    npm run upload-photos
    ```
 
-4. Edit photo metadata in `src/data/photoDatabase.json`
+   Photos are automatically added to your Supabase database during upload.
+
+4. Edit photo metadata in the Supabase dashboard or using SQL queries
 
 ### 6. (Optional) Set up CloudFront CDN
 
@@ -124,23 +128,28 @@ For better performance, set up CloudFront:
    # Add photos to uploads folder
    cp /path/to/your/photos/* scripts/uploads/
    
-   # Upload to S3
+   # Upload to S3 and save metadata to Supabase
    npm run upload-photos
    ```
 
 3. **Update Metadata**:
-   - Edit `src/data/photoDatabase.json`
-   - Add titles, descriptions, categories, and technical details
-   - Mark featured photos
+   - Log into your Supabase dashboard
+   - Go to Table Editor → `photos`
+   - Edit titles, descriptions, categories, and technical details
+   - Mark featured photos by setting `featured = true`
 
 4. **Deploy**:
    ```bash
    npm run build
    # Deploy your built site
    ```
+ Photo Metadata Management
 
-### Photo Database Structure
+Photo metadata is stored in **Supabase**, not in JSON files. 
 
+### Supabase Tables:
+
+**`photos` table**
 Each photo in `photoDatabase.json` has this structure:
 
 ```json

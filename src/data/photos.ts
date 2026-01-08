@@ -145,7 +145,7 @@ export async function getCategories() {
 
   return [
     { id: 'all', name: 'All Photos', count: photos?.length || 0 },
-    ...(categories?.map(cat => ({
+    ...(categories?.filter(cat => cat.id !== 'all').map(cat => ({
       id: cat.id,
       name: cat.name,
       count: counts[cat.id] || 0

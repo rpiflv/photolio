@@ -95,10 +95,10 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
             <div className={`transition-opacity duration-[500ms] ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}>
               <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
               {currentPhoto.description && (
-                <p className="text-gray-600">{currentPhoto.description}</p>
+                <p className="text-sm text-gray-600">{currentPhoto.description}</p>
               )}
               <p className="text-sm text-gray-500 mt-2">
-                {new Date(currentPhoto.date).toLocaleDateString()} • {currentPhoto.category}
+                {currentPhoto.category}
               </p>
               <p className="text-xs text-gray-400 mt-1">
                 {currentIndex + 1} / {photos.length}
