@@ -285,6 +285,55 @@ You can find out everything you need to know on how to use TanStack Store in the
 
 Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
 
+# Deployment
+
+## Deploy to Vercel
+
+This application is configured for easy deployment to Vercel.
+
+### Prerequisites
+- A [Vercel account](https://vercel.com) (free)
+- Git repository (GitHub, GitLab, or Bitbucket)
+
+### Deployment Steps
+
+1. **Push your code to Git** (if not already done):
+   ```bash
+   git init
+   git add .
+   git commit -m "Ready for deployment"
+   git remote add origin <your-git-repo-url>
+   git push -u origin main
+   ```
+
+2. **Deploy to Vercel**:
+   - Go to [vercel.com](https://vercel.com) and sign in
+   - Click "Add New Project"
+   - Import your Git repository
+   - Vercel will auto-detect the configuration from `vercel.json`
+   - Click "Deploy"
+
+3. **Set Environment Variables**:
+   In Vercel dashboard → Project Settings → Environment Variables, add:
+   ```
+   VITE_AWS_REGION
+   VITE_AWS_ACCESS_KEY_ID
+   VITE_AWS_SECRET_ACCESS_KEY
+   VITE_S3_BUCKET_NAME
+   VITE_CLOUDFRONT_DOMAIN (optional)
+   ```
+
+4. **Custom Domain** (Optional):
+   - Go to Project Settings → Domains
+   - Add your Namecheap domain
+   - Follow the DNS configuration instructions Vercel provides
+   - Update your Namecheap DNS settings with the records provided
+
+### Automatic Deployments
+Once connected, Vercel will automatically deploy:
+- Production deployments on pushes to `main` branch
+- Preview deployments for pull requests
+
 # Learn More
 
 You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).

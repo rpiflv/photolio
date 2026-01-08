@@ -27,6 +27,10 @@ export const Route = createRootRoute({
     ],
     links: [
       {
+        rel: 'icon',
+        href: '/shutter.ico',
+      },
+      {
         rel: 'stylesheet',
         href: appCss,
       },
