@@ -39,7 +39,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   // Add blur transition when photo changes
   useEffect(() => {
     if (isTransitioning) {
-      const timer = setTimeout(() => setIsTransitioning(false), 500)
+      const timer = setTimeout(() => setIsTransitioning(false), 100)
       return () => clearTimeout(timer)
     }
   }, [isTransitioning])
