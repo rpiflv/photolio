@@ -61,6 +61,7 @@ export async function optimizeImage(imageBuffer, options = {}) {
     }
 
     let pipeline = sharp(imageBuffer)
+      .rotate() // Auto-rotate based on EXIF orientation
 
     // Resize
     if (config.width && config.height) {

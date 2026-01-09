@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import PhotoGrid from '../components/PhotoGrid'
 import { ProtectedRoute } from '../components/ProtectedRoute'
 import type { Photo } from '../data/photos'
-import { getImageUrl, getOptimizedImageUrl } from '../lib/s3'
+import { getImageUrl, getThumbnailUrl } from '../lib/s3'
 
 export const Route = createFileRoute('/favorites')({
   component: FavoritesPage,
@@ -53,7 +53,7 @@ function FavoritesContent() {
           category: f.photos.category,
           date: f.photos.date,
           featured: f.photos.featured,
-          thumbnailSrc: getOptimizedImageUrl(f.photos.s3_key, 400, 400, 80),
+          thumbnailSrc: getThumbnailUrl(f.photos.s3_key),
           s3Key: f.photos.s3_key,
           price: f.photos.price,
           metadata: {

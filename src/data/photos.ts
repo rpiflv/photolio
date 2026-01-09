@@ -58,12 +58,12 @@ function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
     thumbnailSrc: getThumbnailUrl(dbPhoto.s3_key),
     s3Key: dbPhoto.s3_key,
     price: dbPhoto.price || undefined,
-    dimensions: dbPhoto.dimensions as any,
+    dimensions: dbPhoto.dimensions || undefined,
     metadata: {
       location: dbPhoto.location || undefined,
       camera: dbPhoto.camera || undefined,
       lens: dbPhoto.lens || undefined,
-      settings: dbPhoto.settings as any,
+      settings: dbPhoto.settings || undefined,
     }
   }
 }
@@ -174,9 +174,9 @@ export async function getCategories() {
 
 // Get responsive image URLs
 export const getResponsiveImageUrls = (s3Key: string) => ({
-  small: getOptimizedImageUrl(s3Key, 400, undefined, 75),
-  medium: getOptimizedImageUrl(s3Key, 800, undefined, 80),
-  large: getOptimizedImageUrl(s3Key, 1200, undefined, 85),
-  xlarge: getOptimizedImageUrl(s3Key, 1920, undefined, 90),
+  small: getThumbnailUrl(s3Key),
+  medium: getOptimizedImageUrl(s3Key, 'medium'),
+  large: getOptimizedImageUrl(s3Key, 'large'),
+  xlarge: getOptimizedImageUrl(s3Key, 'full'),
   original: getImageUrl(s3Key)
 })

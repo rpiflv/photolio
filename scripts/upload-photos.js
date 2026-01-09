@@ -140,7 +140,7 @@ async function uploadPhotos() {
         const { error } = await supabase.from('photos').insert({
           title: metadata.title,
           description: metadata.description || null,
-          s3_key: s3Key,
+          s3_key: baseS3Key,
           category: metadata.category,
           date: metadata.date,
           featured: metadata.featured,

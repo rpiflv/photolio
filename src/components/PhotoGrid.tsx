@@ -46,12 +46,19 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
             )}
             
             <img
-              src={photo.thumbnailSrc || photo.src}
+              src={photo.src}
               srcSet={photo.srcset}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={photo.alt}
               loading="lazy"
               onLoad={() => handleImageLoad(photo.id)}
+              onError={(e) => {
+                // Fallback to main src if thumbnail fails
+                const img = e.target as HTMLImageElement
+                if (img.src !== photo.src) {
+                  img.src = photo.src
+                }
+              }}
               className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
                 loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
               }`}

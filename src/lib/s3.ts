@@ -52,7 +52,12 @@ export const getImageUrl = (key: string): string => {
 
 // Helper function to get optimized image URL with different sizes
 export const getOptimizedImageUrl = (key: string, size?: 'thumbnail' | 'medium' | 'large' | 'full'): string => {
-  if (!size || size === 'full') {
+  if (!key) {
+    console.warn('getOptimizedImageUrl called with empty key')
+    return ''
+  }
+  
+  if (!size || size === 'full' || size === 'large') {
     return getImageUrl(key)
   }
   

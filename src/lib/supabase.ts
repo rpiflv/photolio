@@ -27,7 +27,11 @@ export interface Photo {
     shutter?: string
     iso?: number
     focalLength?: string
-  }
+  } | null
+  dimensions: {
+    width: number
+    height: number
+  } | null
   price: number | null
   created_at: string
 }
