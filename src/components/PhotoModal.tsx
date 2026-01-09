@@ -115,6 +115,8 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               ref={imgRef}
               key={currentPhoto.id}
               src={currentPhoto.src}
+              srcSet={currentPhoto.srcset}
+              sizes="(max-width: 768px) 100vw, 1920px"
               alt={currentPhoto.alt}
               className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[300ms] ${
                 loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'

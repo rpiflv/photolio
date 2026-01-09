@@ -6,6 +6,7 @@ import { uploadImageToS3 } from '../src/lib/imageService.js'
 import { createClient } from '@supabase/supabase-js'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import { optimizeImage } from './imageOptimizer.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -74,23 +75,68 @@ async function uploadPhotos() {
       const imageBuffer = readFileSync(filePath)
       
       const metadata = promptForMetadata(filename)
-      const s3Key = generateS3Key(filename, metadata.category)
+      const baseS3Key = generateS3Key(filename, metadata.category)
       
       try {
-        // Upload to S3
-        console.log(`Uploading to S3: ${s3Key}`)
-        const url = await uploadImageToS3(
-          s3Key, 
-          imageBuffer, 
-          `image/${extname(filename).slice(1)}`,
+        // Optimize image to multiple sizes
+        console.log(`Optimizing ${filename}...`)
+        const optimized = await optimizeImage(imageBuffer, {
+          sizes: ['thumbnail', 'medium', 'large'],
+          format: 'jpeg'
+        })
+        
+        console.log(`  Original: ${optimized.metadata.sizeKB || Math.round(imageBuffer.length / 1024)} KB`)
+        console.log(`  Thumbnail: ${optimized.thumbnail.sizeKB} KB`)
+        console.log(`  Medium: ${optimized.medium.sizeKB} KB`)
+        console.log(`  Large: ${optimized.large.sizeKB} KB`)
+        
+        // Upload all sizes to S3
+        const ext = extname(baseS3Key)
+        const keyBase = baseS3Key.slice(0, -ext.length)
+        
+        // Upload thumbnail
+        const thumbnailKey = `${keyBase}-thumb${ext}`
+        console.log(`Uploading thumbnail: ${thumbnailKey}`)
+        await uploadImageToS3(
+          thumbnailKey,
+          optimized.thumbnail.buffer,
+          'image/jpeg',
           {
             title: metadata.title,
-            category: metadata.category,
-            date: metadata.date
+            size: 'thumbnail',
+            originalSize: String(optimized.metadata.size)
           }
         )
         
-        // Insert into Supabase
+        // Upload medium size
+        const mediumKey = `${keyBase}-medium${ext}`
+        console.log(`Uploading medium: ${mediumKey}`)
+        await uploadImageToS3(
+          mediumKey,
+          optimized.medium.buffer,
+          'image/jpeg',
+          {
+            title: metadata.title,
+            size: 'medium',
+            originalSize: String(optimized.metadata.size)
+          }
+        )
+        
+        // Upload large size (primary full-size image)
+        const largeKey = baseS3Key
+        console.log(`Uploading large: ${largeKey}`)
+        const url = await uploadImageToS3(
+          largeKey,
+          optimized.large.buffer,
+          'image/jpeg',
+          {
+            title: metadata.title,
+            size: 'large',
+            originalSize: String(optimized.metadata.size)
+          }
+        )
+        
+        // Insert into Supabase with all S3 keys
         const { error } = await supabase.from('photos').insert({
           title: metadata.title,
           description: metadata.description || null,

@@ -47,12 +47,14 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
             
             <img
               src={photo.thumbnailSrc || photo.src}
+              srcSet={photo.srcset}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={photo.alt}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ${
-                loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-              }`}
               loading="lazy"
               onLoad={() => handleImageLoad(photo.id)}
+              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
+                loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+              }`}
             />
             
             {/* Favorite Button - Changed to Star */}

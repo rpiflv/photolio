@@ -8,6 +8,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "upload-photos": "tsx scripts/upload-photos.js",
+    "optimize-existing": "tsx scripts/optimize-existing-photos.js",
     "setup-uploads": "mkdir scripts/uploads && echo 'Upload folder created. Add your images here and run npm run upload-photos'",
     "sync-s3": "node scripts/sync-s3.js"
   },
@@ -41,6 +42,7 @@
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^5.0.4",
     "jsdom": "^27.0.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.2",
     "vite": "^7.1.7",
     "vitest": "^3.0.5",

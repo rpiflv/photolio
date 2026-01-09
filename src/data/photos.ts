@@ -1,4 +1,4 @@
-import { getImageUrl, getOptimizedImageUrl } from '../lib/s3'
+import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } from '../lib/s3'
 import { supabase } from '../lib/supabase'
 import type { Photo as DBPhoto } from '../lib/supabase'
 
@@ -18,6 +18,7 @@ export interface Photo {
   title: string
   description?: string
   src: string
+  srcset?: string
   alt: string
   category: 'portrait' | 'landscape' | 'street' | 'nature' | 'architecture' | 'other'
   date: string
@@ -49,13 +50,15 @@ function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
     title: dbPhoto.title,
     description: dbPhoto.description || undefined,
     src: getImageUrl(dbPhoto.s3_key),
+    srcset: getImageSrcSet(dbPhoto.s3_key),
     alt: dbPhoto.description || dbPhoto.title,
     category: dbPhoto.category as any,
     date: dbPhoto.date,
     featured: dbPhoto.featured,
-    thumbnailSrc: getOptimizedImageUrl(dbPhoto.s3_key, 400, 400, 80),
+    thumbnailSrc: getThumbnailUrl(dbPhoto.s3_key),
     s3Key: dbPhoto.s3_key,
     price: dbPhoto.price || undefined,
+    dimensions: dbPhoto.dimensions as any,
     metadata: {
       location: dbPhoto.location || undefined,
       camera: dbPhoto.camera || undefined,
