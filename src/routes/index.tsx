@@ -22,7 +22,7 @@ function HomePage() {
           <img
             src="/images/hero/hero-background.jpg"
             alt="Photography hero background"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover opacity-0 animate-[fadeIn_0.8s_ease-in-out_forwards]"
           />
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
