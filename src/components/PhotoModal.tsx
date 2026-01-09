@@ -39,7 +39,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   // Add blur transition when photo changes
   useEffect(() => {
     if (isTransitioning) {
-      const timer = setTimeout(() => setIsTransitioning(false), 300)
+      const timer = setTimeout(() => setIsTransitioning(false), 500)
       return () => clearTimeout(timer)
     }
   }, [isTransitioning])
@@ -126,7 +126,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
           </div>
 
           <div className="text-gray-800 text-center mt-10 px-4 min-h-[120px]">
-            <div className={`transition-opacity duration-[300ms] ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+            <div className={`transition-opacity duration-300 ease-in-out delay-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
               <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
               {currentPhoto.description && (
                 <p className="text-sm text-gray-600">{currentPhoto.description}</p>
