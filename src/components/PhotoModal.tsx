@@ -102,8 +102,8 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
 
       <div className="max-w-4xl max-h-full flex flex-col items-center">
         {/* Photo with passepartout */}
-        <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl">
-          <div className="relative min-h-[50vh] flex items-center justify-center">
+        <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl w-[90vw] max-w-5xl">
+          <div className="relative h-[70vh] w-full flex items-center justify-center">
             {/* Loading Spinner */}
             {!loadedImages.has(currentPhoto.id) && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -118,15 +118,15 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               srcSet={currentPhoto.srcset}
               sizes="(max-width: 768px) 100vw, 1920px"
               alt={currentPhoto.alt}
-              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-[300ms] ${
+              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-500 ease-in-out ${
                 loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
-              } ${isTransitioning ? 'blur-xl scale-95' : 'blur-0 scale-100'}`}
+              } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
               onLoad={() => handleImageLoad(currentPhoto.id)}
             />
           </div>
 
           <div className="text-gray-800 text-center mt-10 px-4 min-h-[120px]">
-            <div className={`transition-opacity duration-[500ms] ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+            <div className={`transition-opacity duration-[300ms] ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
               <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
               {currentPhoto.description && (
                 <p className="text-sm text-gray-600">{currentPhoto.description}</p>
