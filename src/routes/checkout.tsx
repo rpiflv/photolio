@@ -103,6 +103,46 @@ function CheckoutContent() {
 
       if (orderError) throw orderError
 
+      // TODO: Integrate Printful order creation
+      // Uncomment when ready to automatically create Printful orders
+      /*
+      try {
+        const printfulResult = await createPrintfulOrder({
+          orderId: orderData.id,
+          recipient: {
+            name: shippingInfo.name,
+            address1: shippingInfo.address,
+            city: shippingInfo.city,
+            state_code: shippingInfo.state,
+            country_code: shippingInfo.country,
+            zip: shippingInfo.zip,
+            email: shippingInfo.email,
+            phone: shippingInfo.phone
+          },
+          items: items.map(item => ({
+            variant_id: item.product.variant_id,
+            quantity: item.quantity,
+            photo_url: item.photoUrl // Make sure this is the full S3 URL
+          }))
+        })
+
+        if (printfulResult.success) {
+          // Update order with Printful order ID
+          await supabase
+            .from('orders')
+            .update({
+              printful_order_id: printfulResult.printful_order_id,
+              printful_status: printfulResult.printful_status,
+              status: 'processing'
+            })
+            .eq('id', orderData.id)
+        }
+      } catch (printfulError) {
+        console.error('Printful order creation failed:', printfulError)
+        // Order is saved but Printful failed - you can manually create it later
+      }
+      */
+
       // Clear cart
       clearCart()
 
