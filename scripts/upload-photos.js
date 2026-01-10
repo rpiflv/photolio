@@ -141,6 +141,8 @@ async function uploadPhotos() {
           title: metadata.title,
           description: metadata.description || null,
           s3_key: baseS3Key,
+          thumbnail_s3_key: thumbnailKey,
+          medium_s3_key: mediumKey,
           category: metadata.category,
           date: metadata.date,
           featured: metadata.featured,
@@ -148,13 +150,17 @@ async function uploadPhotos() {
           location: metadata.location || null,
           camera: metadata.camera || null,
           lens: metadata.lens || null,
-          settings: metadata.settings
+          settings: metadata.settings,
+          dimensions: {
+            width: optimized.metadata.width,
+            height: optimized.metadata.height
+          }
         })
 
         if (error) {
           console.error(`❌ Failed to save to database: ${error.message}`)
         } else {
-          console.log(`✅ Uploaded: ${filename} -> ${s3Key}`)
+          console.log(`✅ Uploaded: ${filename} -> ${baseS3Key}`)
           uploadedFiles.push(filePath)
         }
       } catch (error) {

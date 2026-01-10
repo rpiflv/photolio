@@ -33,13 +33,15 @@ export default function Header() {
             >
               Gallery
             </Link>
-            <Link
-              to="/favorites"
-              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
-            >
-              Favorites
-            </Link>
+            {user && (
+              <Link
+                to="/favorites"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+              >
+                Favorites
+              </Link>
+            )}
             <Link
               to="/about"
               className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
@@ -109,13 +111,15 @@ export default function Header() {
               >
                 Gallery
               </Link>
-              <Link
-                to="/favorites"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Favorites
-              </Link>
+              {user && (
+                <Link
+                  to="/favorites"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Favorites
+                </Link>
+              )}
               <Link
                 to="/about"
                 className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
