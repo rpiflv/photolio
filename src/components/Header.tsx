@@ -8,13 +8,13 @@ export default function Header() {
   const { user, signOut } = useAuth()
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-md">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Aperture className="h-8 w-8 text-gray-900" />
-            <span className="text-xl font-bold text-gray-900">PhotoFolio</span>
+            <span className="text-xl font-bold text-gray-900">FR Photo</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -42,13 +42,6 @@ export default function Header() {
                 Favorites
               </Link>
             )}
-            <Link
-              to="/about"
-              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
-            >
-              About
-            </Link>
             <Link
               to="/contact"
               className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
@@ -83,7 +76,7 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-100"
           >
             {isMenuOpen ? (
               <X className="h-6 w-6" />
@@ -95,7 +88,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4">
+          <div className="md:hidden pb-4 bg-white border-t border-gray-200">
             <div className="flex flex-col space-y-2">
               <Link
                 to="/"
@@ -120,13 +113,6 @@ export default function Header() {
                   Favorites
                 </Link>
               )}
-              <Link
-                to="/about"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                About
-              </Link>
               <Link
                 to="/contact"
                 className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"

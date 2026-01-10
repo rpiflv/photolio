@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { Mail, Phone, MapPin, Send, Instagram } from 'lucide-react'
 
 export const Route = createFileRoute('/contact')({ component: ContactPage })
 
@@ -19,14 +19,14 @@ function ContactPage() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    alert('Thank you for your message!')
-    setFormData({ name: '', email: '', message: '' })
-  }
+  // const handleSubmit = (e: React.FormEvent) => {
+  //   e.preventDefault()
+  //   alert('Thank you for your message!')
+  //   setFormData({ name: '', email: '', message: '' })
+  // }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen bg-gray-50 pt-32 pb-16">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Get In Touch</h1>
@@ -35,10 +35,10 @@ function ContactPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-center">
+          {/* <div className="bg-white rounded-xl shadow-lg p-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Send a Message</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                   Name
@@ -95,30 +95,46 @@ function ContactPage() {
                 Send Message
               </button>
             </form>
-          </div>
+          </div> */}
 
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Info</h2>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Contact Info</h2>
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <Mail className="w-6 h-6 text-gray-600" />
                 <div>
                   <div className="font-medium text-gray-900">Email</div>
-                  <div className="text-gray-600">hello@photofolio.com</div>
+                  <div className="text-gray-600">rpiflv@gmail.com</div>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
+              {/* <div className="flex items-center space-x-4">
                 <Phone className="w-6 h-6 text-gray-600" />
                 <div>
                   <div className="font-medium text-gray-900">Phone</div>
                   <div className="text-gray-600">+1 (555) 123-4567</div>
                 </div>
-              </div>
+              </div> */}
               <div className="flex items-center space-x-4">
                 <MapPin className="w-6 h-6 text-gray-600" />
                 <div>
                   <div className="font-medium text-gray-900">Location</div>
-                  <div className="text-gray-600">New York, NY</div>
+                  <div className="text-gray-600">Tokyo, JP</div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                <div>
+                  <div className="font-medium text-gray-900">X (Twitter)</div>
+                  <a href="https://x.com/flavioasflyfla" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">@flavioasflyfla</a>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Instagram className="w-6 h-6 text-gray-600" />
+                <div>
+                  <div className="font-medium text-gray-900">Instagram</div>
+                  <a href="https://instagram.com/theflyfla" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">@theflyfla</a>
                 </div>
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Camera, Eye, Heart } from 'lucide-react'
+import { Camera, Eye, Heart, Mail } from 'lucide-react'
 import { getFeaturedPhotos, photoQueryKeys } from '../data/photos'
 import { useQuery } from '@tanstack/react-query'
 
@@ -106,11 +106,11 @@ function HomePage() {
             Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.
           </p>
           <Link
-            to="/about"
+            to="/contact"
             className="inline-flex items-center px-6 py-3 border border-gray-900 text-gray-900 rounded-lg font-semibold hover:bg-gray-900 hover:text-white transition-colors"
           >
-            Learn More
-            <Heart className="ml-2 h-5 w-5" />
+            Get In Touch
+            <Mail className="ml-2 h-5 w-5" />
           </Link>
         </div>
       </section>
