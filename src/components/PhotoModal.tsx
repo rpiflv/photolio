@@ -1,6 +1,7 @@
-import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Loader2, ShoppingCart } from 'lucide-react'
 import { Photo } from '../data/photos'
 import { useState, useEffect, useRef } from 'react'
+import { PrintProductSelector } from './PrintProductSelector'
 
 interface PhotoModalProps {
   photo: Photo | null
@@ -19,6 +20,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   })
   const [isTransitioning, setIsTransitioning] = useState(true)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [showPrintSelector, setShowPrintSelector] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
 
   const handleImageLoad = (photoId: string) => {
@@ -137,10 +139,29 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               <p className="text-xs text-gray-400 mt-1">
                 {currentIndex + 1} / {photos.length}
               </p>
+              
+              {/* Buy Print Button */}
+              <button
+                onClick={() => setShowPrintSelector(true)}
+                className="mt-4 inline-flex items-center gap-2 bg-gray-900 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-800 transition-colors"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                Buy Print
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Print Product Selector Modal */}
+      {showPrintSelector && (
+        <PrintProductSelector
+          photoId={currentPhoto.id}
+          photoTitle={currentPhoto.title}
+          photoUrl={currentPhoto.src}
+          onClose={() => setShowPrintSelector(false)}
+        />
+      )}
     </div>
   )
 }

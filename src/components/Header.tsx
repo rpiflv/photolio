@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { Aperture, Menu, X, User, LogOut } from 'lucide-react'
+import { Aperture, Menu, X, User, LogOut, ShoppingCart } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useCartStore } from '../stores/cartStore'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const totalItems = useCartStore((state) => state.getTotalItems())
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
@@ -57,6 +59,16 @@ export default function Header() {
               Contact
             </Link>
 
+            {user && (
+              <Link
+                to="/orders"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+              >
+                My Orders
+              </Link>
+            )}
+
             {/* Auth buttons */}
             {user ? (
               <div className="flex items-center space-x-4">
@@ -78,6 +90,19 @@ export default function Header() {
                 <span>Sign in</span>
               </Link>
             )}
+
+            {/* Cart Icon */}
+            <Link
+              to="/cart"
+              className="relative text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md"
+            >
+              <ShoppingCart className="h-6 w-6" />
+              {totalItems > 0 && (
+                <span className="absolute -top-1 -right-1 bg-gray-900 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {totalItems}
+                </span>
+              )}
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -134,6 +159,16 @@ export default function Header() {
               >
                 Contact
               </Link>
+
+              {user && (
+                <Link
+                  to="/orders"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  My Orders
+                </Link>
+              )}
 
               {user ? (
                 <>
