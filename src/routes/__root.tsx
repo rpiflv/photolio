@@ -1,8 +1,9 @@
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from "@vercel/analytics/react"
+import { useEffect } from 'react'
 import Header from '../components/Header'
 import { AuthProvider } from '../contexts/AuthContext'
 
@@ -68,6 +69,17 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
+
+  // Track page views with Google Analytics on route changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.gtag) {
+      window.gtag('config', 'G-8BELM31L2S', {
+        page_path: location.pathname,
+      })
+    }
+  }, [location.pathname])
+
   return (
     <html lang="en">
       <head>

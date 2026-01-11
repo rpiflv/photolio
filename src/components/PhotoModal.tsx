@@ -1,4 +1,4 @@
-import { X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Loader2, Maximize2, Minimize2 } from 'lucide-react'
 import { Photo } from '../data/photos'
 import { useState, useEffect, useRef } from 'react'
 
@@ -19,6 +19,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   })
   const [isTransitioning, setIsTransitioning] = useState(true)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [isFullScreen, setIsFullScreen] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
 
   const handleImageLoad = (photoId: string) => {
@@ -74,19 +75,41 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     }
   }, [isOpen, currentIndex])
 
+  const toggleFullScreen = () => {
+    setIsFullScreen(!isFullScreen)
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 overflow-y-auto">
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+        className={`fixed top-8 right-8 sm:right-16 md:right-24 transition-colors z-20 rounded-full p-2 ${
+          isFullScreen 
+            ? 'text-white hover:text-gray-300 hover:bg-white/10' 
+            : 'text-black hover:bg-black/10'
+        }`}
         aria-label="Close"
       >
         <X size={32} />
       </button>
 
+      {/* Full Screen Toggle Button (Mobile Only) */}
+      <button
+        onClick={toggleFullScreen}
+        className={`lg:hidden fixed top-8 right-24 sm:right-32 md:right-40 transition-colors z-20 rounded-full p-2 ${
+          isFullScreen 
+            ? 'text-white hover:text-gray-300 hover:bg-white/10' 
+            : 'text-black hover:bg-black/10'
+        }`}
+        aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
+      >
+        {isFullScreen ? <Minimize2 size={28} /> : <Maximize2 size={28} />}
+      </button>
+
+      {/* Desktop navigation buttons - fixed on sides */}
       <button
         onClick={goToPrevious}
-        className="absolute left-4 text-white hover:text-gray-300 transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:block fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Previous photo"
       >
         <ChevronLeft size={48} />
@@ -94,52 +117,131 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
 
       <button
         onClick={goToNext}
-        className="absolute right-4 text-white hover:text-gray-300 transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:block fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Next photo"
       >
         <ChevronRight size={48} />
       </button>
 
-      <div className="max-w-4xl max-h-full flex flex-col items-center">
-        {/* Photo with passepartout */}
-        <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl w-[90vw] max-w-5xl">
-          <div className="relative h-[70vh] w-full flex items-center justify-center">
-            {/* Loading Spinner */}
-            {!loadedImages.has(currentPhoto.id) && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
-              </div>
-            )}
-            
-            <img
-              ref={imgRef}
-              key={currentPhoto.id}
-              src={currentPhoto.src}
-              srcSet={currentPhoto.srcset}
-              sizes="(max-width: 768px) 100vw, 1920px"
-              alt={currentPhoto.alt}
-              className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-500 ease-in-out ${
-                loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
-              } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
-              onLoad={() => handleImageLoad(currentPhoto.id)}
-            />
-          </div>
-
-          <div className="text-gray-800 text-center mt-10 px-4 min-h-[120px]">
-            <div className={`transition-opacity duration-300 ease-in-out delay-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-              <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
-              {currentPhoto.description && (
-                <p className="text-sm text-gray-600">{currentPhoto.description}</p>
+      <div className={`w-full flex flex-col items-center ${isFullScreen ? 'my-4' : 'max-w-4xl max-h-full'}`}>
+        {isFullScreen ? (
+          <>
+            {/* Full screen mode - Image without white background */}
+            <div className="relative flex items-center justify-center h-[85vh] w-full">
+              {/* Loading Spinner */}
+              {!loadedImages.has(currentPhoto.id) && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
+                </div>
               )}
-              <p className="text-sm text-gray-500 mt-2">
-                {currentPhoto.category}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {currentIndex + 1} / {photos.length}
-              </p>
+              
+              <img
+                ref={imgRef}
+                key={currentPhoto.id}
+                src={currentPhoto.src}
+                srcSet={currentPhoto.srcset}
+                sizes="(max-width: 768px) 100vw, 1920px"
+                alt={currentPhoto.alt}
+                className={`max-w-full max-h-[85vh] object-contain block transition-all duration-500 ease-in-out ${
+                  loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
+                } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
+                onLoad={() => handleImageLoad(currentPhoto.id)}
+              />
+            </div>
+
+            {/* Mobile navigation buttons below image */}
+            <div className="lg:hidden flex justify-center gap-8 mt-4 mb-2">
+              <button
+                onClick={goToPrevious}
+                className="text-white hover:text-gray-300 transition-colors p-3 hover:bg-white/10 rounded-full"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={40} />
+              </button>
+              <button
+                onClick={goToNext}
+                className="text-white hover:text-gray-300 transition-colors p-3 hover:bg-white/10 rounded-full"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={40} />
+              </button>
+            </div>
+
+            {/* Full screen metadata shown below image */}
+            <div className="bg-white/95 w-full p-4 mt-2 md:hidden">
+              <div className={`text-gray-800 text-center transition-opacity duration-300 ease-in-out delay-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+                <h2 className="text-lg font-semibold">{currentPhoto.title}</h2>
+                {currentPhoto.description && (
+                  <p className="text-sm text-gray-600 mt-1">{currentPhoto.description}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-2">
+                  {currentPhoto.category}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {currentIndex + 1} / {photos.length}
+                </p>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Normal mode - Photo with passepartout */
+          <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl w-[90vw] max-w-5xl">
+            <div className="relative h-[70vh] w-full flex items-center justify-center">
+              {/* Loading Spinner */}
+              {!loadedImages.has(currentPhoto.id) && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Loader2 className="w-12 h-12 text-gray-400 animate-spin" />
+                </div>
+              )}
+              
+              <img
+                ref={imgRef}
+                key={currentPhoto.id}
+                src={currentPhoto.src}
+                srcSet={currentPhoto.srcset}
+                sizes="(max-width: 768px) 100vw, 1920px"
+                alt={currentPhoto.alt}
+                className={`max-w-full max-h-[70vh] object-contain block shadow-[0_0_30px_rgba(0,0,0,0.7)] transition-all duration-500 ease-in-out ${
+                  loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
+                } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
+                onLoad={() => handleImageLoad(currentPhoto.id)}
+              />
+            </div>
+
+            {/* Mobile navigation buttons below image */}
+            <div className="lg:hidden flex justify-center gap-8 mt-6 mb-4">
+              <button
+                onClick={goToPrevious}
+                className="text-gray-800 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={36} />
+              </button>
+              <button
+                onClick={goToNext}
+                className="text-gray-800 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={36} />
+              </button>
+            </div>
+
+            <div className="text-gray-800 text-center mt-10 px-4 min-h-[120px]">
+              <div className={`transition-opacity duration-300 ease-in-out delay-500 ${isTransitioning ? 'opacity-0' : 'opacity-100'}`}>
+                <h2 className="text-xl font-semibold mt-20">{currentPhoto.title}</h2>
+                {currentPhoto.description && (
+                  <p className="text-sm text-gray-600">{currentPhoto.description}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-2">
+                  {currentPhoto.category}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {currentIndex + 1} / {photos.length}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   )
