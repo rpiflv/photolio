@@ -112,17 +112,13 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 overflow-y-auto ${
       isFullScreen ? 'p-0' : 'p-4'
     }`}>
-      {/* Close and Full Screen buttons - fixed when in full screen or mobile */}
+      {/* Close button - fixed on mobile, absolute in desktop normal mode */}
       <button
         onClick={onClose}
         className={`transition-colors z-20 rounded-full p-2 ${
-          isFullScreen || window.innerWidth < 1024
-            ? 'fixed top-8 right-8 sm:right-16 md:right-24 lg:right-16' 
-            : 'hidden lg:block lg:absolute lg:top-4 lg:right-4'
-        } ${
-          isFullScreen 
-            ? 'text-white hover:text-gray-300 hover:bg-white/10' 
-            : 'text-black hover:bg-black/10'
+          isFullScreen
+            ? 'fixed top-8 right-8 sm:right-16 md:right-24 lg:right-16 text-white hover:text-gray-300 hover:bg-white/10' 
+            : 'fixed top-8 right-8 sm:right-16 md:right-24 lg:hidden text-black hover:bg-black/10'
         }`}
         aria-label="Close"
       >
@@ -133,13 +129,9 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
       <button
         onClick={toggleFullScreen}
         className={`transition-colors z-20 rounded-full p-2 ${
-          isFullScreen || window.innerWidth < 1024
-            ? 'fixed top-8 right-24 sm:right-32 md:right-40 lg:right-32'
-            : 'hidden lg:block lg:absolute lg:top-4 lg:right-20'
-        } ${
-          isFullScreen 
-            ? 'text-white hover:text-gray-300 hover:bg-white/10' 
-            : 'text-black hover:bg-black/10'
+          isFullScreen
+            ? 'fixed top-8 right-24 sm:right-32 md:right-40 lg:right-32 text-white hover:text-gray-300 hover:bg-white/10'
+            : 'fixed top-8 right-24 sm:right-32 md:right-40 lg:hidden text-black hover:bg-black/10'
         }`}
         aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
       >

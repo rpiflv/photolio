@@ -1,11 +1,11 @@
-import { HeadContent, Scripts, createRootRoute, useLocation } from '@tanstack/react-router'
+import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from "@vercel/analytics/react"
-import { useEffect } from 'react'
 import Header from '../components/Header'
 import { AuthProvider } from '../contexts/AuthContext'
+import GATracker from '../components/GATracker'
 
 import appCss from '../styles.css?url'
 
@@ -71,28 +71,6 @@ export const Route = createRootRoute({
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
-  const location = useLocation()
-
-  // Track page views with Google Analytics on route changes
-  useEffect(() => {
-    // Wait for gtag to be available
-    const trackPageView = () => {
-      if (typeof window !== 'undefined' && window.gtag) {
-        window.gtag('config', 'G-8BELM31L2S', {
-          page_path: location.pathname,
-          page_location: window.location.href,
-        })
-        console.log('[GA] Page view tracked:', location.pathname)
-      } else {
-        console.warn('[GA] gtag not available yet')
-      }
-    }
-
-    // Small delay to ensure gtag is loaded
-    const timer = setTimeout(trackPageView, 100)
-    return () => clearTimeout(timer)
-  }, [location.pathname])
-
   return (
     <html lang="en">
       <head>
@@ -101,6 +79,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="bg-gray-50">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <GATracker />
             <Header />
             <main className="min-h-screen">
               {children}
