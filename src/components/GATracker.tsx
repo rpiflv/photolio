@@ -1,11 +1,18 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from '@tanstack/react-router'
 
 export default function GATracker() {
   const location = useLocation()
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
+    // Skip first render to avoid hydration issues
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
     // Track page views with Google Analytics on route changes
     const trackPageView = () => {
       if (typeof window !== 'undefined' && window.gtag) {

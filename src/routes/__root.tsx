@@ -79,9 +79,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body className="bg-gray-50">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <GATracker />
             <Header />
             <main className="min-h-screen">
+              <GATracker />
               {children}
             </main>
             <TanStackDevtools
