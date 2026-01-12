@@ -49,22 +49,12 @@ export const Route = createRootRoute({
         href: appCss,
       },
     ],
-    scripts: [
+    scripts: import.meta.env.VITE_GOOGLE_ANALYTICS_ID ? [
       {
-        src: `https://www.googletagmanager.com/gtag/js?id=G-8BELM31L2S`,
+        src: `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GOOGLE_ANALYTICS_ID}`,
         async: true,
       },
-      {
-        innerHTML: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-8BELM31L2S', {
-            send_page_view: false
-          });
-        `,
-      },
-    ],
+    ] : [],
   }),
 
   shellComponent: RootDocument,
