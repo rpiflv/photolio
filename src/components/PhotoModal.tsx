@@ -66,7 +66,14 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') goToPrevious()
       if (e.key === 'ArrowRight') goToNext()
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        // If in fullscreen, exit fullscreen first, then close modal
+        if (document.fullscreenElement) {
+          document.exitFullscreen()
+        } else {
+          onClose()
+        }
+      }
     }
 
     if (isOpen) {
@@ -75,15 +82,44 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     }
   }, [isOpen, currentIndex])
 
-  const toggleFullScreen = () => {
-    setIsFullScreen(!isFullScreen)
+  // Monitor fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement)
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  const toggleFullScreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        // Enter fullscreen
+        await document.documentElement.requestFullscreen()
+        setIsFullScreen(true)
+      } else {
+        // Exit fullscreen
+        await document.exitFullscreen()
+        setIsFullScreen(false)
+      }
+    } catch (err) {
+      console.error('Error toggling fullscreen:', err)
+    }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 p-4 overflow-y-auto">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 overflow-y-auto ${
+      isFullScreen ? 'p-0' : 'p-4'
+    }`}>
+      {/* Close and Full Screen buttons - fixed when in full screen or mobile */}
       <button
         onClick={onClose}
-        className={`fixed top-8 right-8 sm:right-16 md:right-24 transition-colors z-20 rounded-full p-2 ${
+        className={`transition-colors z-20 rounded-full p-2 ${
+          isFullScreen || window.innerWidth < 1024
+            ? 'fixed top-8 right-8 sm:right-16 md:right-24 lg:right-16' 
+            : 'hidden lg:block lg:absolute lg:top-4 lg:right-4'
+        } ${
           isFullScreen 
             ? 'text-white hover:text-gray-300 hover:bg-white/10' 
             : 'text-black hover:bg-black/10'
@@ -93,10 +129,14 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <X size={32} />
       </button>
 
-      {/* Full Screen Toggle Button (Mobile Only) */}
+      {/* Full Screen Toggle Button */}
       <button
         onClick={toggleFullScreen}
-        className={`lg:hidden fixed top-8 right-24 sm:right-32 md:right-40 transition-colors z-20 rounded-full p-2 ${
+        className={`transition-colors z-20 rounded-full p-2 ${
+          isFullScreen || window.innerWidth < 1024
+            ? 'fixed top-8 right-24 sm:right-32 md:right-40 lg:right-32'
+            : 'hidden lg:block lg:absolute lg:top-4 lg:right-20'
+        } ${
           isFullScreen 
             ? 'text-white hover:text-gray-300 hover:bg-white/10' 
             : 'text-black hover:bg-black/10'
@@ -123,11 +163,11 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <ChevronRight size={48} />
       </button>
 
-      <div className={`w-full flex flex-col items-center ${isFullScreen ? 'my-4' : 'max-w-4xl max-h-full'}`}>
+      <div className={`w-full flex flex-col items-center ${isFullScreen ? '' : 'max-w-4xl max-h-full my-4'}`}>
         {isFullScreen ? (
           <>
             {/* Full screen mode - Image without white background */}
-            <div className="relative flex items-center justify-center h-[85vh] w-full">
+            <div className="relative flex items-center justify-center h-screen w-full">
               {/* Loading Spinner */}
               {!loadedImages.has(currentPhoto.id) && (
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -142,7 +182,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
                 srcSet={currentPhoto.srcset}
                 sizes="(max-width: 768px) 100vw, 1920px"
                 alt={currentPhoto.alt}
-                className={`max-w-full max-h-[85vh] object-contain block transition-all duration-500 ease-in-out ${
+                className={`max-w-full max-h-screen object-contain block transition-all duration-500 ease-in-out ${
                   loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
                 } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
                 onLoad={() => handleImageLoad(currentPhoto.id)}
@@ -185,7 +225,24 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
           </>
         ) : (
           /* Normal mode - Photo with passepartout */
-          <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl w-[90vw] max-w-5xl">
+          <div className="bg-white/95 p-4 pb-14 md:p-16 md:pb-12 shadow-2xl w-[90vw] max-w-5xl relative">
+            {/* Desktop absolute positioned buttons inside white background */}
+            <button
+              onClick={onClose}
+              className="hidden lg:block absolute top-4 right-4 text-black hover:bg-black/10 transition-colors z-20 rounded-full p-2"
+              aria-label="Close"
+            >
+              <X size={32} />
+            </button>
+
+            <button
+              onClick={toggleFullScreen}
+              className="hidden lg:block absolute top-4 right-20 text-black hover:bg-black/10 transition-colors z-20 rounded-full p-2"
+              aria-label="Enter full screen"
+            >
+              <Maximize2 size={28} />
+            </button>
+
             <div className="relative h-[70vh] w-full flex items-center justify-center">
               {/* Loading Spinner */}
               {!loadedImages.has(currentPhoto.id) && (
