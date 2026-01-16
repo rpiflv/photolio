@@ -94,17 +94,22 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
 
   const toggleFullScreen = async () => {
     try {
-      if (!document.fullscreenElement) {
-        // Enter fullscreen
+      if (!isFullScreen) {
+        // Enter fullscreen - first exit if already in fullscreen
+        if (document.fullscreenElement) {
+          await document.exitFullscreen()
+        }
         await document.documentElement.requestFullscreen()
-        setIsFullScreen(true)
       } else {
         // Exit fullscreen
-        await document.exitFullscreen()
-        setIsFullScreen(false)
+        if (document.fullscreenElement) {
+          await document.exitFullscreen()
+        }
       }
     } catch (err) {
       console.error('Error toggling fullscreen:', err)
+      // Sync state with actual fullscreen state if there's an error
+      setIsFullScreen(!!document.fullscreenElement)
     }
   }
 
