@@ -4,6 +4,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Analytics } from "@vercel/analytics/react"
 import Header from '../components/Header'
+import CookieConsent from '../components/CookieConsent'
 import { AuthProvider } from '../contexts/AuthContext'
 import GATracker from '../components/GATracker'
 
@@ -87,6 +88,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           />
           </AuthProvider>
         </QueryClientProvider>
+        <CookieConsent />
         <Analytics />
         <Scripts />
       </body>
