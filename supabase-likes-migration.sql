@@ -20,7 +20,7 @@ AS $$
 BEGIN
   UPDATE photos 
   SET likes_count = COALESCE(likes_count, 0) + 1
-  WHERE id = photo_id;
+  WHERE id::text = photo_id;
 END;
 $$;
 
@@ -33,7 +33,7 @@ AS $$
 BEGIN
   UPDATE photos 
   SET likes_count = GREATEST(COALESCE(likes_count, 0) - 1, 0)
-  WHERE id = photo_id;
+  WHERE id::text = photo_id;
 END;
 $$;
 
