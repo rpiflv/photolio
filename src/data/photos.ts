@@ -30,6 +30,7 @@ export interface Photo {
   thumbnailSrc?: string
   s3Key?: string
   price?: number
+  likesCount?: number
   metadata?: {
     location?: string
     camera?: string
@@ -58,6 +59,7 @@ function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
     thumbnailSrc: getThumbnailUrl(dbPhoto.s3_key),
     s3Key: dbPhoto.s3_key,
     price: dbPhoto.price || undefined,
+    likesCount: dbPhoto.likes_count || 0,
     dimensions: dbPhoto.dimensions || undefined,
     metadata: {
       location: dbPhoto.location || undefined,

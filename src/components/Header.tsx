@@ -1,11 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import { Aperture, Menu, X, User, LogOut } from 'lucide-react'
+import { Aperture, Menu, X, User, LogOut, BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useAdmin } from '../hooks/useAdmin'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
+  const { isAdmin } = useAdmin()
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-md">
@@ -40,6 +42,16 @@ export default function Header() {
                 activeProps={{ className: 'text-gray-900 bg-gray-100' }}
               >
                 Favorites
+              </Link>
+            )}
+            {isAdmin && (
+              <Link
+                to="/dashboard"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-1"
+                activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span>Dashboard</span>
               </Link>
             )}
             <Link
@@ -111,6 +123,15 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Favorites
+                </Link>
+              )}
+              {isAdmin && (
+                <Link
+                  to="/dashboard"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
                 </Link>
               )}
               <Link
