@@ -1,6 +1,7 @@
-import { X, ChevronLeft, ChevronRight, Loader2, Maximize2, Minimize2 } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Loader2, Maximize2, Minimize2, Heart } from 'lucide-react'
 import { Photo } from '../data/photos'
 import { useState, useEffect, useRef } from 'react'
+import { useLikes } from '../hooks/useLikes'
 
 interface PhotoModalProps {
   photo: Photo | null
@@ -21,6 +22,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [isFullScreen, setIsFullScreen] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
+  const { toggleLike, isLiked } = useLikes()
 
   const handleImageLoad = (photoId: string) => {
     setLoadedImages(prev => new Set(prev).add(photoId))
@@ -130,6 +132,19 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <X size={32} />
       </button>
 
+      {/* Like Button */}
+      <button
+        onClick={() => toggleLike(currentPhoto.id)}
+        className={`transition-colors z-20 rounded-full p-2 ${
+          isFullScreen
+            ? 'fixed top-8 left-8 sm:left-16 md:left-24 lg:left-16 hover:bg-white/10'
+            : 'fixed top-8 left-8 sm:left-16 md:left-24 lg:hidden hover:bg-black/10'
+        } ${isLiked(currentPhoto.id) ? 'text-red-500' : isFullScreen ? 'text-white hover:text-red-400' : 'text-black hover:text-red-500'}`}
+        aria-label={isLiked(currentPhoto.id) ? "Unlike photo" : "Like photo"}
+      >
+        <Heart size={28} fill={isLiked(currentPhoto.id) ? 'currentColor' : 'none'} />
+      </button>
+
       {/* Full Screen Toggle Button */}
       <button
         onClick={toggleFullScreen}
@@ -230,6 +245,16 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               aria-label="Close"
             >
               <X size={32} />
+            </button>
+
+            <button
+              onClick={() => toggleLike(currentPhoto.id)}
+              className={`hidden lg:block absolute top-4 left-4 hover:bg-black/10 transition-colors z-20 rounded-full p-2 ${
+                isLiked(currentPhoto.id) ? 'text-red-500' : 'text-black hover:text-red-500'
+              }`}
+              aria-label={isLiked(currentPhoto.id) ? "Unlike photo" : "Like photo"}
+            >
+              <Heart size={28} fill={isLiked(currentPhoto.id) ? 'currentColor' : 'none'} />
             </button>
 
             <button
