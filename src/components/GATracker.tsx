@@ -2,13 +2,14 @@ import { useEffect } from 'react'
 import { useLocation } from '@tanstack/react-router'
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GOOGLE_ANALYTICS_ID
+const isProduction = import.meta.env.PROD
 
 export default function GATracker() {
   const location = useLocation()
 
   useEffect(() => {
-    // Initialize gtag on first load
-    if (typeof window !== 'undefined' && GA_MEASUREMENT_ID) {
+    // Only initialize gtag in production
+    if (typeof window !== 'undefined' && GA_MEASUREMENT_ID && isProduction) {
       window.dataLayer = window.dataLayer || []
       window.gtag = function() {
         window.dataLayer.push(arguments)
@@ -21,9 +22,9 @@ export default function GATracker() {
   }, [])
 
   useEffect(() => {
-    // Track page views with Google Analytics on route changes
+    // Track page views with Google Analytics on route changes (production only)
     const trackPageView = () => {
-      if (typeof window !== 'undefined' && window.gtag && GA_MEASUREMENT_ID) {
+      if (typeof window !== 'undefined' && window.gtag && GA_MEASUREMENT_ID && isProduction) {
         window.gtag('config', GA_MEASUREMENT_ID, {
           page_path: location.pathname,
           page_location: window.location.href,
