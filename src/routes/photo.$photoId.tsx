@@ -18,6 +18,7 @@ function PhotoCarouselPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [isTransitioning, setIsTransitioning] = useState(true)
+  const [isLandscape, setIsLandscape] = useState(false)
   const { toggleLike, isLiked } = useLikes()
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
 
@@ -40,6 +41,20 @@ function PhotoCarouselPage() {
       return () => clearTimeout(timer)
     }
   }, [isTransitioning])
+
+  useEffect(() => {
+    const updateOrientation = () => {
+      setIsLandscape(window.innerWidth > window.innerHeight)
+    }
+
+    updateOrientation()
+    window.addEventListener('resize', updateOrientation)
+    window.addEventListener('orientationchange', updateOrientation)
+    return () => {
+      window.removeEventListener('resize', updateOrientation)
+      window.removeEventListener('orientationchange', updateOrientation)
+    }
+  }, [])
 
   const handleImageLoad = (currentPhotoId: string) => {
     setLoadedImages(prev => new Set(prev).add(currentPhotoId))
@@ -119,7 +134,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToPrevious}
-        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="flex fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Previous photo"
       >
         <ChevronLeft size={48} />
@@ -127,7 +142,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToNext}
-        className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="flex fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Next photo"
       >
         <ChevronRight size={48} />
@@ -151,46 +166,50 @@ function PhotoCarouselPage() {
             srcSet={currentPhoto.srcset}
             sizes="(max-width: 768px) 100vw, 1920px"
             alt={currentPhoto.alt}
-            className={`max-w-full max-h-screen object-contain block transition-all duration-500 ease-in-out ${
+            className={`${isLandscape ? 'w-screen h-screen' : 'max-w-full max-h-screen'} object-contain block transition-all duration-500 ease-in-out ${
               loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
             } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
             onLoad={() => handleImageLoad(currentPhoto.id)}
           />
         </div>
 
-        <div className="flex justify-center gap-8 mt-4 mb-2">
-          <button
-            onClick={goToPrevious}
-            className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
-            aria-label="Previous photo"
-          >
-            <ChevronLeft size={40} />
-          </button>
-          <button
-            onClick={goToNext}
-            className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
-            aria-label="Next photo"
-          >
-            <ChevronRight size={40} />
-          </button>
-        </div>
+        {!isLandscape && (
+          <>
+            <div className="flex justify-center gap-8 mt-4 mb-2">
+              <button
+                onClick={goToPrevious}
+                className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
+                aria-label="Previous photo"
+              >
+                <ChevronLeft size={40} />
+              </button>
+              <button
+                onClick={goToNext}
+                className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
+                aria-label="Next photo"
+              >
+                <ChevronRight size={40} />
+              </button>
+            </div>
 
-        <div className="bg-white/95 w-full p-4 mt-2">
-          <div className={`text-gray-800 text-center transition-opacity duration-300 ease-in-out delay-500 ${
-            isTransitioning ? 'opacity-0' : 'opacity-100'
-          }`}>
-            <h2 className="text-lg font-semibold">{currentPhoto.title}</h2>
-            {currentPhoto.description && (
-              <p className="text-sm text-gray-600 mt-1">{currentPhoto.description}</p>
-            )}
-            <p className="text-sm text-gray-500 mt-2">
-              {currentPhoto.category}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              {currentIndex + 1} / {photos.length}
-            </p>
-          </div>
-        </div>
+            <div className="bg-white/95 w-full p-4 mt-2">
+              <div className={`text-gray-800 text-center transition-opacity duration-300 ease-in-out delay-500 ${
+                isTransitioning ? 'opacity-0' : 'opacity-100'
+              }`}>
+                <h2 className="text-lg font-semibold">{currentPhoto.title}</h2>
+                {currentPhoto.description && (
+                  <p className="text-sm text-gray-600 mt-1">{currentPhoto.description}</p>
+                )}
+                <p className="text-sm text-gray-500 mt-2">
+                  {currentPhoto.category}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {currentIndex + 1} / {photos.length}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
