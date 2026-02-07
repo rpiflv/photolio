@@ -1,4 +1,4 @@
-import { ListObjectsV2Command, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { ListObjectsV2Command, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { s3Client, BUCKET_NAME } from './s3'
 
@@ -134,5 +134,50 @@ export async function getImageSizes(key: string) {
     medium: url,
     small: url,
     thumbnail: url,
+  }
+}
+
+// Delete image from S3
+export async function deleteImageFromS3(key: string): Promise<void> {
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    })
+
+    await s3Client.send(command)
+  } catch (error) {
+    console.error('Error deleting from S3:', error)
+    throw error
+  }
+}
+
+// Upload image using presigned URL (client-side)
+export async function uploadImageWithPresignedUrl(
+  file: File,
+  key: string
+): Promise<void> {
+  try {
+    console.log('Getting presigned URL for:', key)
+    const uploadUrl = await getUploadUrl(key, file.type)
+    
+    console.log('Uploading file to S3...')
+    const response = await fetch(uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: {
+        'Content-Type': file.type,
+      },
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error('S3 upload failed:', response.status, errorText)
+      throw new Error(`Upload failed: ${response.status} ${response.statusText}. ${errorText}`)
+    }
+    console.log('File uploaded successfully to S3')
+  } catch (error) {
+    console.error('Error uploading image:', error)
+    throw error
   }
 }

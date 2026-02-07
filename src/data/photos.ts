@@ -1,6 +1,7 @@
 import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } from '../lib/s3'
 import { supabase } from '../lib/supabase'
 import type { Photo as DBPhoto } from '../lib/supabase'
+import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
 
 // Query keys for TanStack Query
 export const photoQueryKeys = {
@@ -182,3 +183,164 @@ export const getResponsiveImageUrls = (s3Key: string) => ({
   xlarge: getOptimizedImageUrl(s3Key, 'full'),
   original: getImageUrl(s3Key)
 })
+
+// Create a new photo
+export async function createPhoto(photoData: {
+  id: string
+  title: string
+  description?: string
+  s3Key: string
+  category: string
+  date: string
+  featured?: boolean
+  tags?: string[]
+  location?: string
+  camera?: string
+  lens?: string
+  settings?: {
+    aperture?: string
+    shutter?: string
+    iso?: number
+    focalLength?: string
+  }
+  dimensions?: {
+    width: number
+    height: number
+  }
+  price?: number
+}): Promise<Photo | null> {
+  const { data, error } = await supabase
+    .from('photos')
+    .insert({
+      id: photoData.id,
+      title: photoData.title,
+      description: photoData.description || null,
+      s3_key: photoData.s3Key,
+      category: photoData.category,
+      date: photoData.date,
+      featured: photoData.featured || false,
+      tags: photoData.tags || [],
+      location: photoData.location || null,
+      camera: photoData.camera || null,
+      lens: photoData.lens || null,
+      settings: photoData.settings || null,
+      dimensions: photoData.dimensions || null,
+      price: photoData.price || null,
+      likes_count: 0,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error creating photo:', error)
+    throw error
+  }
+
+  return dbPhotoToPhoto(data)
+}
+
+// Delete a photo (removes from database and S3)
+export async function deletePhoto(photoId: string): Promise<void> {
+  // First get the photo to retrieve the S3 key
+  const photo = await getPhotoById(photoId)
+  
+  if (!photo || !photo.s3Key) {
+    throw new Error('Photo not found or missing S3 key')
+  }
+
+  // Delete from database
+  const { error: dbError } = await supabase
+    .from('photos')
+    .delete()
+    .eq('id', photoId)
+
+  if (dbError) {
+    console.error('Error deleting photo from database:', dbError)
+    throw dbError
+  }
+
+  // Delete from S3
+  try {
+    await deleteImageFromS3(photo.s3Key)
+    
+    // Also try to delete thumbnail if it exists
+    const thumbnailKey = photo.s3Key.replace('/gallery/', '/gallery/thumbnails/')
+    try {
+      await deleteImageFromS3(thumbnailKey)
+    } catch (e) {
+      // Thumbnail might not exist, that's okay
+      console.log('Thumbnail not found or already deleted')
+    }
+  } catch (error) {
+    console.error('Error deleting photo from S3:', error)
+    throw error
+  }
+}
+
+// Upload photo to S3 and create database entry
+export async function uploadPhoto(
+  file: File,
+  photoData: {
+    id: string
+    title: string
+    description?: string
+    category: string
+    date?: string
+    featured?: boolean
+    tags?: string[]
+    location?: string
+    camera?: string
+    lens?: string
+    settings?: {
+      aperture?: string
+      shutter?: string
+      iso?: number
+      focalLength?: string
+    }
+    price?: number
+  }
+): Promise<Photo | null> {
+  const s3Key = `gallery/${photoData.category}/${photoData.id}.${file.name.split('.').pop()}`
+  
+  console.log('Starting photo upload process...')
+  console.log('File:', file.name, 'Size:', file.size, 'Type:', file.type)
+  console.log('S3 Key:', s3Key)
+  
+  try {
+    // Upload to S3
+    console.log('Step 1: Uploading to S3...')
+    await uploadImageWithPresignedUrl(file, s3Key)
+    
+    // Get image dimensions
+    console.log('Step 2: Getting image dimensions...')
+    const dimensions = await getImageDimensions(file)
+    console.log('Dimensions:', dimensions)
+    
+    // Create database entry
+    console.log('Step 3: Creating database entry...')
+    const photo = await createPhoto({
+      ...photoData,
+      s3Key,
+      date: photoData.date || new Date().toISOString(),
+      dimensions,
+    })
+    
+    console.log('Photo upload completed successfully')
+    return photo
+  } catch (error) {
+    console.error('Error in uploadPhoto:', error)
+    throw error
+  }
+}
+
+// Helper function to get image dimensions
+function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height })
+    }
+    img.onerror = reject
+    img.src = URL.createObjectURL(file)
+  })
+}
