@@ -134,7 +134,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToPrevious}
-        className="flex fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Previous photo"
       >
         <ChevronLeft size={48} />
@@ -142,7 +142,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToNext}
-        className="flex fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Next photo"
       >
         <ChevronRight size={48} />
@@ -175,7 +175,7 @@ function PhotoCarouselPage() {
 
         {!isLandscape && (
           <>
-            <div className="flex justify-center gap-8 mt-4 mb-2">
+            <div className="hidden lg:flex justify-center gap-8 mt-4 mb-2">
               <button
                 onClick={goToPrevious}
                 className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
