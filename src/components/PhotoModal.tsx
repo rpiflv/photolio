@@ -157,18 +157,16 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <Heart size={28} fill={isLiked(currentPhoto.id) ? 'currentColor' : 'none'} />
       </button>
 
-      {/* Full Screen Toggle Button */}
-      <button
-        onClick={toggleFullScreen}
-        className={`transition-colors z-20 rounded-full p-2 ${
-          isFullScreen
-            ? 'fixed top-8 right-24 sm:right-32 md:right-40 lg:right-32 text-white hover:text-gray-300 hover:bg-white/10'
-            : 'fixed top-8 right-24 sm:right-32 md:right-40 lg:hidden text-black hover:bg-black/10'
-        }`}
-        aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
-      >
-        {isFullScreen ? <Minimize2 size={28} /> : <Maximize2 size={28} />}
-      </button>
+      {/* Full Screen Toggle Button (desktop only) */}
+      {isFullScreen && (
+        <button
+          onClick={toggleFullScreen}
+          className="hidden lg:block fixed top-8 right-24 sm:right-32 md:right-40 lg:right-32 text-white hover:text-gray-300 hover:bg-white/10 transition-colors z-20 rounded-full p-2"
+          aria-label="Exit full screen"
+        >
+          <Minimize2 size={28} />
+        </button>
+      )}
 
       {/* Desktop navigation buttons - fixed on sides */}
       <button
