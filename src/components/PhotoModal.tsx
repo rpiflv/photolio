@@ -21,6 +21,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   const [isTransitioning, setIsTransitioning] = useState(true)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
   const [isFullScreen, setIsFullScreen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
   const { toggleLike, isLiked } = useLikes()
 
@@ -46,6 +47,16 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
       return () => clearTimeout(timer)
     }
   }, [isTransitioning])
+
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+
+    updateIsMobile()
+    window.addEventListener('resize', updateIsMobile)
+    return () => window.removeEventListener('resize', updateIsMobile)
+  }, [])
 
   if (!isOpen || !photo) return null
 
@@ -96,7 +107,6 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
 
   // Auto-enter fullscreen on mobile when modal opens
   useEffect(() => {
-    const isMobile = window.innerWidth < 1024 // lg breakpoint
     if (isOpen && isMobile && !isFullScreen) {
       // Small delay to ensure modal is rendered
       const timer = setTimeout(() => {
@@ -104,7 +114,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [isOpen])
+  }, [isOpen, isMobile, isFullScreen])
 
   const toggleFullScreen = async () => {
     try {
@@ -128,8 +138,8 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90 overflow-y-auto ${
-      isFullScreen ? 'p-0' : 'p-4'
+    <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto ${
+      isFullScreen || isMobile ? 'p-0 bg-black' : 'p-4 bg-black bg-opacity-90'
     }`}>
       {/* Close button - fixed on mobile, absolute in desktop normal mode */}
       <button
@@ -185,8 +195,8 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
         <ChevronRight size={48} />
       </button>
 
-      <div className={`w-full flex flex-col items-center ${isFullScreen ? '' : 'max-w-4xl max-h-full my-4'}`}>
-        {isFullScreen ? (
+      <div className={`w-full flex flex-col items-center ${isFullScreen || isMobile ? '' : 'max-w-4xl max-h-full my-4'}`}>
+        {isFullScreen || isMobile ? (
           <>
             {/* Full screen mode - Image without white background */}
             <div className="relative flex items-center justify-center h-screen w-full">

@@ -57,7 +57,7 @@ function GalleryPage() {
         </div>
 
         {/* Photo Grid */}
-        <PhotoGrid photos={filteredPhotos} />
+        <PhotoGrid photos={filteredPhotos} categoryId={selectedCategory} />
       </div>
     </div>
   )
