@@ -18,6 +18,8 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  // Ensure service worker is copied to build output
+  publicDir: 'public',
 })
 
 export default config
