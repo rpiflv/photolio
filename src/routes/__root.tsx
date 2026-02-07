@@ -7,8 +7,15 @@ import Header from '../components/Header'
 import CookieConsent from '../components/CookieConsent'
 import { AuthProvider } from '../contexts/AuthContext'
 import GATracker from '../components/GATracker'
+import { registerServiceWorker, initPWAInstall } from '../lib/pwa'
 
 import appCss from '../styles.css?url'
+
+// Initialize PWA
+if (typeof window !== 'undefined') {
+  registerServiceWorker()
+  initPWAInstall()
+}
 
 // Create a client with optimized caching
 const queryClient = new QueryClient({
@@ -48,6 +55,14 @@ export const Route = createRootRoute({
       {
         rel: 'stylesheet',
         href: appCss,
+      },
+      {
+        rel: 'manifest',
+        href: '/manifest.json',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/logo512.png',
       },
     ],
     scripts: import.meta.env.VITE_GOOGLE_ANALYTICS_ID ? [
@@ -89,7 +104,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           </AuthProvider>
         </QueryClientProvider>
         <CookieConsent />
-        <Analytics />
+        {import.meta.env.PROD && <Analytics />}
         <Scripts />
       </body>
     </html>

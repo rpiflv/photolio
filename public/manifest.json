@@ -1,6 +1,7 @@
 {
-  "short_name": "TanStack App",
-  "name": "Create TanStack App Sample",
+  "short_name": "Photo Portfolio",
+  "name": "Photo Portfolio - Professional Photography",
+  "description": "Browse and enjoy stunning professional photography",
   "icons": [
     {
       "src": "shutter.ico",
@@ -10,16 +11,21 @@
     {
       "src": "shutter_640.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "logo512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
   "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["photo", "photography", "lifestyle"],
+  "screenshots": []
 }
