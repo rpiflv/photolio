@@ -41,6 +41,62 @@ export const Route = createRootRoute({
         name: 'description',
         content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
       },
+      {
+        property: 'og:title',
+        content: 'PhotoFolio - Professional Photography Portfolio',
+      },
+      {
+        property: 'og:description',
+        content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
+      },
+      {
+        property: 'og:type',
+        content: 'website',
+      },
+      {
+        property: 'og:url',
+        content: 'https://www.flavioripa.com/',
+      },
+      {
+        property: 'og:image',
+        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
+      },
+      {
+        property: 'og:image:width',
+        content: '1200',
+      },
+      {
+        property: 'og:image:height',
+        content: '630',
+      },
+      {
+        property: 'og:site_name',
+        content: 'PhotoFolio',
+      },
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        name: 'twitter:title',
+        content: 'PhotoFolio - Professional Photography Portfolio',
+      },
+      {
+        name: 'twitter:description',
+        content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
+      },
+      {
+        name: 'twitter:image',
+        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
+      },
+      {
+        name: 'twitter:site',
+        content: '@f_oival',
+      },
+      {
+        name: 'twitter:creator',
+        content: '@f_oival',
+      },
     ],
     links: [
       {
