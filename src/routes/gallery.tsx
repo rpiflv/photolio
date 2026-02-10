@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import PhotoGrid from '../components/PhotoGrid'
+import GalleryInfoPopup from '../components/GalleryInfoPopup'
 import { getPhotos, getPhotosByCategory, getCategories, photoQueryKeys } from '../data/photos'
 
 export const Route = createFileRoute('/gallery')({
@@ -29,6 +30,7 @@ function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-16">
+      <GalleryInfoPopup />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Photo Gallery</h1>
@@ -55,7 +57,7 @@ function GalleryPage() {
         </div>
 
         {/* Photo Grid */}
-        <PhotoGrid photos={filteredPhotos} />
+        <PhotoGrid photos={filteredPhotos} categoryId={selectedCategory} />
       </div>
     </div>
   )

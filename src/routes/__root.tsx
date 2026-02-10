@@ -2,9 +2,13 @@ import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-
+import { Analytics } from "@vercel/analytics/react"
+import { useEffect } from 'react'
 import Header from '../components/Header'
+import CookieConsent from '../components/CookieConsent'
 import { AuthProvider } from '../contexts/AuthContext'
+import GATracker from '../components/GATracker'
+import { registerServiceWorker, initPWAInstall } from '../lib/pwa'
 
 import appCss from '../styles.css?url'
 
@@ -37,6 +41,62 @@ export const Route = createRootRoute({
         name: 'description',
         content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
       },
+      {
+        property: 'og:title',
+        content: 'PhotoFolio - Professional Photography Portfolio',
+      },
+      {
+        property: 'og:description',
+        content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
+      },
+      {
+        property: 'og:type',
+        content: 'website',
+      },
+      {
+        property: 'og:url',
+        content: 'https://www.flavioripa.com/',
+      },
+      {
+        property: 'og:image',
+        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
+      },
+      {
+        property: 'og:image:width',
+        content: '1200',
+      },
+      {
+        property: 'og:image:height',
+        content: '630',
+      },
+      {
+        property: 'og:site_name',
+        content: 'PhotoFolio',
+      },
+      {
+        name: 'twitter:card',
+        content: 'summary_large_image',
+      },
+      {
+        name: 'twitter:title',
+        content: 'PhotoFolio - Professional Photography Portfolio',
+      },
+      {
+        name: 'twitter:description',
+        content: 'A stunning photography portfolio showcasing professional photography work across various categories including portraits, landscapes, and street photography.',
+      },
+      {
+        name: 'twitter:image',
+        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
+      },
+      {
+        name: 'twitter:site',
+        content: '@f_oival',
+      },
+      {
+        name: 'twitter:creator',
+        content: '@f_oival',
+      },
     ],
     links: [
       {
@@ -47,13 +107,33 @@ export const Route = createRootRoute({
         rel: 'stylesheet',
         href: appCss,
       },
+      {
+        rel: 'manifest',
+        href: '/manifest.json',
+      },
+      {
+        rel: 'apple-touch-icon',
+        href: '/logo512.png',
+      },
     ],
+    scripts: import.meta.env.VITE_GOOGLE_ANALYTICS_ID ? [
+      {
+        src: `https://www.googletagmanager.com/gtag/js?id=${import.meta.env.VITE_GOOGLE_ANALYTICS_ID}`,
+        async: true,
+      },
+    ] : [],
   }),
 
   shellComponent: RootDocument,
 })
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  // Initialize PWA only on client side
+  useEffect(() => {
+    registerServiceWorker()
+    initPWAInstall()
+  }, [])
+
   return (
     <html lang="en">
       <head>
@@ -64,6 +144,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           <AuthProvider>
             <Header />
             <main className="min-h-screen">
+              <GATracker />
               {children}
             </main>
             <TanStackDevtools
@@ -79,6 +160,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           />
           </AuthProvider>
         </QueryClientProvider>
+        <CookieConsent />
+        {import.meta.env.PROD && <Analytics />}
         <Scripts />
       </body>
     </html>

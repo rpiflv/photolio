@@ -33,6 +33,7 @@ export interface Photo {
     height: number
   } | null
   price: number | null
+  likes_count: number
   created_at: string
 }
 

@@ -18,6 +18,12 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  build: {
+    // Raise limit to reduce chunk size warnings for larger bundles.
+    chunkSizeWarningLimit: 1500,
+  },
+  // Ensure service worker is copied to build output
+  publicDir: 'public',
 })
 
 export default config

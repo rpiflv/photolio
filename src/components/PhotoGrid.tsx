@@ -1,19 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import PhotoModal from './PhotoModal'
 import { Star, Loader2 } from 'lucide-react' // Changed from Heart to Star
 import { useFavorites } from '../hooks/useFavorites'
 import { useAuth } from '../contexts/AuthContext'
 import type { Photo } from '../data/photos'
+import { useNavigate } from '@tanstack/react-router'
 
 interface PhotoGridProps {
   photos: Photo[]
+  categoryId?: string
 }
 
-export default function PhotoGrid({ photos }: PhotoGridProps) {
+export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null)
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set())
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 1024)
   const { user } = useAuth()
   const { isFavorited, toggleFavorite } = useFavorites()
+  const navigate = useNavigate()
 
   const handleImageLoad = (photoId: string) => {
     setLoadedImages(prev => new Set(prev).add(photoId))
@@ -29,6 +33,29 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
     await toggleFavorite(photoId)
   }
 
+  useEffect(() => {
+    const updateIsMobile = () => {
+      setIsMobile(window.innerWidth < 1024)
+    }
+
+    updateIsMobile()
+    window.addEventListener('resize', updateIsMobile)
+    return () => window.removeEventListener('resize', updateIsMobile)
+  }, [])
+
+  const handlePhotoOpen = (photo: Photo) => {
+    if (isMobile) {
+      navigate({
+        to: '/photo/$photoId',
+        params: { photoId: photo.id },
+        search: { category: categoryId ?? 'all' },
+      })
+      return
+    }
+
+    setSelectedPhoto(photo)
+  }
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -36,7 +63,7 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
           <div
             key={photo.id}
             className="group relative aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer bg-gray-100"
-            onClick={() => setSelectedPhoto(photo)}
+            onClick={() => handlePhotoOpen(photo)}
           >
             {/* Loading Spinner */}
             {!loadedImages.has(photo.id) && (
@@ -98,7 +125,7 @@ export default function PhotoGrid({ photos }: PhotoGridProps) {
         ))}
       </div>
 
-      {selectedPhoto && (
+      {selectedPhoto && !isMobile && (
         <PhotoModal
           photo={selectedPhoto}
           photos={photos}
