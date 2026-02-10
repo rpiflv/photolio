@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Mail, Phone, MapPin, Send, Instagram } from 'lucide-react'
+import { Mail, Phone, MapPin, Send } from 'lucide-react'
+import { FaInstagram } from 'react-icons/fa'
 
 export const Route = createFileRoute('/contact')({ component: ContactPage })
 
@@ -127,11 +128,11 @@ function ContactPage() {
                 </svg>
                 <div>
                   <div className="font-medium text-gray-900">X (Twitter)</div>
-                  <a href="https://x.com/flavioasflyfla" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">@flavioasflyfla</a>
+                  <a href="https://x.com/f_oival" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">@f_oival</a>
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <Instagram className="w-6 h-6 text-gray-600" />
+                <FaInstagram className="w-6 h-6 text-gray-600" />
                 <div>
                   <div className="font-medium text-gray-900">Instagram</div>
                   <a href="https://instagram.com/theflyfla" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900">@theflyfla</a>

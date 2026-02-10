@@ -29,26 +29,28 @@ function GalleryPage() {
   const filteredPhotos = photos
 
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
+    <div className="min-h-screen bg-[#f6f4f2] py-16">
       <GalleryInfoPopup />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Photo Gallery</h1>
-          <p className="text-xl text-gray-600">
-            Explore my collection of photographs
+          <h1 className="text-4xl md:text-5xl font-light tracking-[0.08em] text-neutral-900 mb-4">
+            Photo Gallery
+          </h1>
+          <p className="text-base md:text-lg text-neutral-500">
+            A quiet selection of monochrome work
           </p>
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
           {categories.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
-              className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+              className={`px-5 py-2 border rounded-full text-xs tracking-[0.2em] uppercase transition-colors ${
                 selectedCategory === category.id
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
+                  ? 'bg-neutral-900 text-neutral-100 border-neutral-900'
+                  : 'bg-transparent text-neutral-600 border-neutral-300 hover:border-neutral-500'
               }`}
             >
               {category.name} ({category.count})

@@ -30,6 +30,7 @@
     "nitro": "latest",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-icons": "^5.4.0",
     "tailwindcss": "^4.0.6",
     "tsx": "^4.21.0",
     "vite-tsconfig-paths": "^6.0.2"

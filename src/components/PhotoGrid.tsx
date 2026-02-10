@@ -58,16 +58,16 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
         {photos.map((photo) => (
           <div
             key={photo.id}
-            className="group relative aspect-square overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer bg-gray-100"
+            className="group relative aspect-[4/5] overflow-hidden transition-opacity duration-700 cursor-pointer bg-[#efedea]"
             onClick={() => handlePhotoOpen(photo)}
           >
             {/* Loading Spinner */}
             {!loadedImages.has(photo.id) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+              <div className="absolute inset-0 flex items-center justify-center bg-[#efedea]">
                 <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
               </div>
             )}
@@ -86,7 +86,7 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
                   img.src = photo.src
                 }
               }}
-              className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${
+              className={`w-full h-full object-cover transition-opacity duration-700 group-hover:opacity-90 ${
                 loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
               }`}
             />
@@ -95,32 +95,17 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
             {user && (
               <button
                 onClick={(e) => handleFavoriteClick(e, photo.id)}
-                className="absolute top-4 right-4 p-2 hover:opacity-80 hover:bg-white rounded-full transition-all z-10"
+                className="absolute top-4 right-4 p-2 rounded-full transition-all z-10 bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100"
               >
                 <Star
                   className={`h-5 w-5 ${
                     isFavorited(photo.id)
-                      ? 'fill-yellow-400 text-yellow-400' // Changed from red to yellow
-                      : 'text-gray-600'
+                      ? 'fill-neutral-700 text-neutral-700'
+                      : 'text-neutral-600'
                   }`}
                 />
               </button>
             )}
-
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <h3 className="text-lg font-semibold mb-1">{photo.title}</h3>
-                {photo.description && (
-                  <p className="text-sm text-gray-200 line-clamp-2">
-                    {photo.description}
-                  </p>
-                )}
-                <p className="text-xs text-gray-300 mt-2 capitalize">
-                  {photo.category}
-                </p>
-              </div>
-            </div>
           </div>
         ))}
       </div>
