@@ -138,8 +138,8 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
   }
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto ${
-      isFullScreen || isMobile ? 'p-0 bg-black' : 'p-6 bg-black/95'
+    <div className={`fixed inset-0 z-50 flex items-center justify-center overflow-y-auto backdrop-blur-3xl ${
+      isFullScreen || isMobile ? 'p-0 bg-black/93' : 'p-6 bg-black/90'
     }`}>
       {/* Close button */}
       <button
@@ -212,7 +212,6 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               )}
               
               <img
-                ref={imgRef}
                 key={currentPhoto.id}
                 src={currentPhoto.src}
                 srcSet={currentPhoto.srcset}
@@ -221,6 +220,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
                 className={`max-w-full max-h-screen object-contain block transition-all duration-500 ease-in-out ${
                   loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
                 } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
+                style={{ border: '1px solid rgba(255, 255, 255, 0.15)', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}
                 onLoad={() => handleImageLoad(currentPhoto.id)}
               />
             </div>
@@ -278,6 +278,7 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
                 className={`max-w-full max-h-[80vh] object-contain block transition-all duration-500 ease-in-out ${
                   loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
                 } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
+                style={{ border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 12px 60px rgba(0,0,0,0.7)' }}
                 onLoad={() => handleImageLoad(currentPhoto.id)}
               />
             </div>

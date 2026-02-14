@@ -117,12 +117,14 @@ export default defineEventHandler(async (event) => {
     console.log(`[optimize-image] Downloading original: ${s3Key}`)
     const originalBuffer = await downloadFromS3(s3, bucketName, s3Key)
 
-    // Get original dimensions
-    const metadata = await sharp(originalBuffer).metadata()
+    // Get original dimensions and dominant color
+    const image = sharp(originalBuffer)
+    const metadata = await image.metadata()
     const dimensions = {
       width: metadata.width || 0,
       height: metadata.height || 0,
     }
+
     console.log(`[optimize-image] Original: ${dimensions.width}x${dimensions.height}, ${Math.round(originalBuffer.length / 1024)} KB`)
 
     // 2. Generate optimized versions
