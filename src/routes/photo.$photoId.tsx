@@ -125,7 +125,7 @@ function PhotoCarouselPage() {
       <button
         onClick={() => toggleLike(currentPhoto.id)}
         className={`transition-colors z-20 rounded-full p-2 fixed top-8 left-8 sm:left-16 md:left-24 hover:bg-white/10 ${
-          isLiked(currentPhoto.id) ? 'text-red-500' : 'text-white hover:text-red-400'
+          isLiked(currentPhoto.id) ? 'text-neutral-100' : 'text-neutral-300 hover:text-white'
         }`}
         aria-label={isLiked(currentPhoto.id) ? 'Unlike photo' : 'Like photo'}
       >
@@ -134,7 +134,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToPrevious}
-        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:flex fixed left-4 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Previous photo"
       >
         <ChevronLeft size={48} />
@@ -142,7 +142,7 @@ function PhotoCarouselPage() {
 
       <button
         onClick={goToNext}
-        className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 text-white hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
+        className="hidden lg:flex fixed right-4 top-1/2 -translate-y-1/2 text-neutral-300 hover:text-white transition-colors z-10 p-2 hover:bg-white/10 rounded-full"
         aria-label="Next photo"
       >
         <ChevronRight size={48} />
@@ -178,32 +178,32 @@ function PhotoCarouselPage() {
             <div className="hidden lg:flex justify-center gap-8 mt-4 mb-2">
               <button
                 onClick={goToPrevious}
-                className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
+                className="text-neutral-300 hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
                 aria-label="Previous photo"
               >
                 <ChevronLeft size={40} />
               </button>
               <button
                 onClick={goToNext}
-                className="text-white hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
+                className="text-neutral-300 hover:text-white transition-colors p-3 hover:bg-white/10 rounded-full"
                 aria-label="Next photo"
               >
                 <ChevronRight size={40} />
               </button>
             </div>
 
-            <div className="bg-white/95 w-full p-4 mt-2">
-              <div className={`text-gray-800 text-center transition-opacity duration-300 ease-in-out delay-500 ${
+            <div className="w-full px-6 pb-6 mt-2">
+              <div className={`text-neutral-300 text-center transition-opacity duration-300 ease-in-out delay-500 ${
                 isTransitioning ? 'opacity-0' : 'opacity-100'
               }`}>
-                <h2 className="text-lg font-semibold">{currentPhoto.title}</h2>
+                <h2 className="text-base tracking-wide">{currentPhoto.title}</h2>
                 {currentPhoto.description && (
-                  <p className="text-sm text-gray-600 mt-1">{currentPhoto.description}</p>
+                  <p className="text-xs text-neutral-400 mt-1">{currentPhoto.description}</p>
                 )}
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-[11px] text-neutral-500 mt-2 uppercase tracking-[0.2em]">
                   {currentPhoto.category}
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-[10px] text-neutral-500 mt-1">
                   {currentIndex + 1} / {photos.length}
                 </p>
               </div>
