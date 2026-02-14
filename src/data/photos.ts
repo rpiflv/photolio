@@ -190,6 +190,8 @@ export async function createPhoto(photoData: {
   title: string
   description?: string
   s3Key: string
+  thumbnailS3Key?: string
+  mediumS3Key?: string
   category: string
   date: string
   featured?: boolean
@@ -216,6 +218,8 @@ export async function createPhoto(photoData: {
       title: photoData.title,
       description: photoData.description || null,
       s3_key: photoData.s3Key,
+      thumbnail_s3_key: photoData.thumbnailS3Key || null,
+      medium_s3_key: photoData.mediumS3Key || null,
       category: photoData.category,
       date: photoData.date,
       featured: photoData.featured || false,
@@ -241,10 +245,14 @@ export async function createPhoto(photoData: {
 
 // Delete a photo (removes from database and S3)
 export async function deletePhoto(photoId: string): Promise<void> {
-  // First get the photo to retrieve the S3 key
-  const photo = await getPhotoById(photoId)
-  
-  if (!photo || !photo.s3Key) {
+  // First get the photo to retrieve the S3 key and optimized keys
+  const { data: dbPhoto, error: fetchError } = await supabase
+    .from('photos')
+    .select('id, s3_key, thumbnail_s3_key, medium_s3_key')
+    .eq('id', photoId)
+    .single()
+
+  if (fetchError || !dbPhoto?.s3_key) {
     throw new Error('Photo not found or missing S3 key')
   }
 
@@ -259,21 +267,17 @@ export async function deletePhoto(photoId: string): Promise<void> {
     throw dbError
   }
 
-  // Delete from S3
-  try {
-    await deleteImageFromS3(photo.s3Key)
-    
-    // Also try to delete thumbnail if it exists
-    const thumbnailKey = photo.s3Key.replace('/gallery/', '/gallery/thumbnails/')
+  // Delete all versions from S3
+  const keysToDelete = [dbPhoto.s3_key]
+  if (dbPhoto.thumbnail_s3_key) keysToDelete.push(dbPhoto.thumbnail_s3_key)
+  if (dbPhoto.medium_s3_key) keysToDelete.push(dbPhoto.medium_s3_key)
+
+  for (const key of keysToDelete) {
     try {
-      await deleteImageFromS3(thumbnailKey)
-    } catch (e) {
-      // Thumbnail might not exist, that's okay
-      console.log('Thumbnail not found or already deleted')
+      await deleteImageFromS3(key)
+    } catch (error) {
+      console.warn(`Failed to delete S3 object ${key}:`, error)
     }
-  } catch (error) {
-    console.error('Error deleting photo from S3:', error)
-    throw error
   }
 }
 
@@ -307,25 +311,43 @@ export async function uploadPhoto(
   console.log('S3 Key:', s3Key)
   
   try {
-    // Upload to S3
-    console.log('Step 1: Uploading to S3...')
+    // Step 1: Upload original to S3
+    console.log('Step 1: Uploading original to S3...')
     await uploadImageWithPresignedUrl(file, s3Key)
     
-    // Get image dimensions
-    console.log('Step 2: Getting image dimensions...')
-    const dimensions = await getImageDimensions(file)
-    console.log('Dimensions:', dimensions)
+    // Step 2: Call server-side optimization API (uses Sharp)
+    console.log('Step 2: Optimizing image server-side...')
+    const optimizeResponse = await fetch('/api/optimize-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ s3Key }),
+    })
+
+    if (!optimizeResponse.ok) {
+      const errorData = await optimizeResponse.text()
+      console.error('Optimization API error:', errorData)
+      throw new Error(`Image optimization failed: ${optimizeResponse.status}`)
+    }
+
+    const optimized = await optimizeResponse.json() as {
+      thumbnailS3Key: string
+      mediumS3Key: string
+      dimensions: { width: number; height: number }
+    }
+    console.log('Optimization complete:', optimized)
     
-    // Create database entry
+    // Step 3: Create database entry with all S3 keys
     console.log('Step 3: Creating database entry...')
     const photo = await createPhoto({
       ...photoData,
       s3Key,
+      thumbnailS3Key: optimized.thumbnailS3Key,
+      mediumS3Key: optimized.mediumS3Key,
       date: photoData.date || new Date().toISOString(),
-      dimensions,
+      dimensions: optimized.dimensions,
     })
     
-    console.log('Photo upload completed successfully')
+    console.log('Photo upload completed successfully with all optimized versions')
     return photo
   } catch (error) {
     console.error('Error in uploadPhoto:', error)
@@ -333,14 +355,3 @@ export async function uploadPhoto(
   }
 }
 
-// Helper function to get image dimensions
-function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height })
-    }
-    img.onerror = reject
-    img.src = URL.createObjectURL(file)
-  })
-}
