@@ -268,19 +268,30 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
                 </div>
               )}
 
-              <img
-                ref={imgRef}
-                key={currentPhoto.id}
-                src={currentPhoto.src}
-                srcSet={currentPhoto.srcset}
-                sizes="(max-width: 768px) 100vw, 1920px"
-                alt={currentPhoto.alt}
-                className={`max-w-full max-h-[80vh] object-contain block transition-all duration-500 ease-in-out ${
-                  loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
-                } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
-                style={{ border: '1px solid rgba(255,255,255,0.15)', boxShadow: '0 12px 60px rgba(0,0,0,0.7)' }}
-                onLoad={() => handleImageLoad(currentPhoto.id)}
-              />
+              <div
+                className="inline-block"
+                style={{ border: '55px solid rgba(255, 255, 255, 0.84)', boxShadow: '0 12px 60px rgba(0,0,0,0.7)' }}
+              >
+                <div className="relative leading-[0]">
+                  <img
+                    ref={imgRef}
+                    key={currentPhoto.id}
+                    src={currentPhoto.src}
+                    srcSet={currentPhoto.srcset}
+                    sizes="(max-width: 768px) 100vw, 1920px"
+                    alt={currentPhoto.alt}
+                    className={`max-w-full max-h-[80vh] object-contain block transition-all duration-500 ease-in-out ${
+                      loadedImages.has(currentPhoto.id) ? '' : 'opacity-0'
+                    } ${isTransitioning ? 'blur-md scale-99' : 'blur-0 scale-100'}`}
+                    onLoad={() => handleImageLoad(currentPhoto.id)}
+                  />
+                  {/* Outward shadow from image edge onto the white border */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{ boxShadow: '0 2px 15px rgba(0,0,0,0.35), 0 0 5px rgba(0,0,0,0.15)' }}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="lg:hidden flex justify-center gap-8 mt-6 mb-4">

@@ -58,3 +58,9 @@ export interface OrderItem {
   photo_id: string
   price: number
 }
+
+export interface Camera {
+  id: string
+  name: string
+  created_at: string
+}

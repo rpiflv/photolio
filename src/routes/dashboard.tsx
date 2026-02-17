@@ -1,8 +1,9 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera } from '../data/photos'
 import type { Photo } from '../data/photos'
+import type { Camera } from '../lib/supabase'
 import { BarChart3, Heart, Loader2, Upload, Trash2, X } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/dashboard')({
 function DashboardPage() {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const [photos, setPhotos] = useState<Photo[]>([])
+  const [cameras, setCameras] = useState<Camera[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -25,7 +27,17 @@ function DashboardPage() {
     camera: '',
     lens: '',
   })
+  const [customCamera, setCustomCamera] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const fetchCameras = async () => {
+    try {
+      const data = await getCameras()
+      setCameras(data)
+    } catch (error) {
+      console.error('Error fetching cameras:', error)
+    }
+  }
 
   const fetchPhotos = async () => {
     try {
@@ -45,6 +57,7 @@ function DashboardPage() {
   useEffect(() => {
     if (!adminLoading && isAdmin) {
       fetchPhotos()
+      fetchCameras()
     }
   }, [isAdmin, adminLoading])
 
@@ -71,19 +84,31 @@ function DashboardPage() {
       const photoId = crypto.randomUUID()
       
       console.log('Starting upload for:', selectedFile.name)
+      let cameraValue = uploadForm.camera === '__other__' ? customCamera.trim() : uploadForm.camera
+
+      // If adding a new camera, insert it into the cameras table
+      if (uploadForm.camera === '__other__' && cameraValue) {
+        try {
+          await addCamera(cameraValue)
+        } catch {
+          // Camera may already exist, that's fine
+        }
+      }
+
       await uploadPhoto(selectedFile, {
         id: photoId,
         title: uploadForm.title,
         description: uploadForm.description || undefined,
         category: uploadForm.category,
         location: uploadForm.location || undefined,
-        camera: uploadForm.camera || undefined,
+        camera: cameraValue || undefined,
         lens: uploadForm.lens || undefined,
       })
 
       console.log('Upload successful, refreshing photos...')
-      // Refresh photos list
+      // Refresh photos list and cameras
       await fetchPhotos()
+      await fetchCameras()
       
       // Reset form
       setShowUploadModal(false)
@@ -97,6 +122,7 @@ function DashboardPage() {
         camera: '',
         lens: '',
       })
+      setCustomCamera('')
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -430,13 +456,29 @@ function DashboardPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Camera
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={uploadForm.camera}
-                      onChange={(e) => setUploadForm({ ...uploadForm, camera: e.target.value })}
+                      onChange={(e) => {
+                        setUploadForm({ ...uploadForm, camera: e.target.value })
+                        if (e.target.value !== '__other__') setCustomCamera('')
+                      }}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="e.g., Canon EOS R5"
-                    />
+                    >
+                      <option value="">Select a camera</option>
+                      {cameras.map((cam) => (
+                        <option key={cam.id} value={cam.name}>{cam.name}</option>
+                      ))}
+                      <option value="__other__">Other (add new)</option>
+                    </select>
+                    {uploadForm.camera === '__other__' && (
+                      <input
+                        type="text"
+                        value={customCamera}
+                        onChange={(e) => setCustomCamera(e.target.value)}
+                        className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter new camera name"
+                      />
+                    )}
                   </div>
 
                   {/* Lens */}

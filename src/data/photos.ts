@@ -1,6 +1,6 @@
 import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } from '../lib/s3'
 import { supabase } from '../lib/supabase'
-import type { Photo as DBPhoto } from '../lib/supabase'
+import type { Photo as DBPhoto, Camera as DBCamera } from '../lib/supabase'
 import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
 
 // Query keys for TanStack Query
@@ -12,6 +12,7 @@ export const photoQueryKeys = {
   detail: (id: string) => [...photoQueryKeys.details(), id] as const,
   featured: () => [...photoQueryKeys.all, 'featured'] as const,
   categories: () => ['categories'] as const,
+  cameras: () => ['cameras'] as const,
 }
 
 export interface Photo {
@@ -353,5 +354,36 @@ export async function uploadPhoto(
     console.error('Error in uploadPhoto:', error)
     throw error
   }
+}
+
+// Fetch all cameras from the cameras table
+export async function getCameras(): Promise<DBCamera[]> {
+  const { data, error } = await supabase
+    .from('cameras')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching cameras:', error)
+    return []
+  }
+
+  return data
+}
+
+// Add a new camera to the cameras table
+export async function addCamera(name: string): Promise<DBCamera | null> {
+  const { data, error } = await supabase
+    .from('cameras')
+    .insert({ name: name.trim() })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error adding camera:', error)
+    throw error
+  }
+
+  return data
 }
 
