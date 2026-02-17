@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Camera, Eye, Heart, Mail } from 'lucide-react'
+import { Camera, Eye, Mail } from 'lucide-react'
 import { getFeaturedPhotos, photoQueryKeys } from '../data/photos'
+import { getHomeInfo } from '../data/homeInfo'
 import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({
@@ -13,6 +14,11 @@ function HomePage() {
     queryKey: photoQueryKeys.featured(),
     queryFn: getFeaturedPhotos,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+  const { data: homeInfo } = useQuery({
+    queryKey: ['homeInfo'],
+    queryFn: getHomeInfo,
+    staleTime: 1000 * 60 * 5,
   })
   return (
     <div className="min-h-screen"> {/* Removed bg-gray-50 */}
@@ -29,10 +35,10 @@ function HomePage() {
         
         <div className="relative text-center text-white px-4 max-w-4xl">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            Capturing Moments
+            {homeInfo?.hero_title || 'Capturing Moments'}
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
-            Through the lenses of my camera, I tell stories that words cannot express.
+            {homeInfo?.hero_subtitle || 'Through the lenses of my camera, I tell stories that words cannot express.'}
           </p>
           <Link
             to="/gallery"
@@ -48,9 +54,9 @@ function HomePage() {
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Work</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">{homeInfo?.featured_title || 'Featured Work'}</h2>
             <p className="text-xl text-gray-600">
-              A selection of my favorite photographs
+              {homeInfo?.featured_subtitle || 'A selection of my favorite photographs'}
             </p>
           </div>
 
@@ -99,11 +105,9 @@ function HomePage() {
       {/* About Preview */}
       <section className="py-20 bg-white/90 backdrop-blur-sm"> {/* Changed from bg-white to semi-transparent */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-8">About the Photographer</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-8">{homeInfo?.about_title || 'About the Photographer'}</h2>
           <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-            I'm a passionate photographer who believes in the power of visual storytelling. 
-            Every image tells a story, captures an emotion, and preserves a moment in time. 
-            Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.
+            {homeInfo?.about_bio || 'I\'m a passionate photographer who believes in the power of visual storytelling. Every image tells a story, captures an emotion, and preserves a moment in time. Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.'}
           </p>
           <Link
             to="/contact"

@@ -3,8 +3,9 @@ import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
 import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
+import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
-import type { Camera, ContactInfo } from '../lib/supabase'
+import type { Camera, ContactInfo, AboutInfo } from '../lib/supabase'
 import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
@@ -47,6 +48,10 @@ function DashboardPage() {
     subheading: '',
   })
   const [savingContact, setSavingContact] = useState(false)
+  const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null)
+  const [showAboutEdit, setShowAboutEdit] = useState(false)
+  const [aboutForm, setAboutForm] = useState({ hero_title: '', hero_subtitle: '', featured_title: '', featured_subtitle: '', about_title: '', about_bio: '' })
+  const [savingAbout, setSavingAbout] = useState(false)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterCamera, setFilterCamera] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -66,6 +71,15 @@ function DashboardPage() {
       setContactInfo(data)
     } catch (error) {
       console.error('Error fetching contact info:', error)
+    }
+  }
+
+  const fetchAboutInfo = async () => {
+    try {
+      const data = await getMyHomeInfo()
+      setAboutInfo(data)
+    } catch (error) {
+      console.error('Error fetching home info:', error)
     }
   }
 
@@ -89,6 +103,7 @@ function DashboardPage() {
       fetchPhotos()
       fetchCameras()
       fetchContactInfo()
+      fetchAboutInfo()
     }
   }, [isAdmin, adminLoading])
 
@@ -217,6 +232,29 @@ function DashboardPage() {
       alert('Failed to update photo. Please try again.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleAboutSave = async () => {
+    if (!aboutInfo) return
+    setSavingAbout(true)
+    try {
+      await updateHomeInfo(aboutInfo.id, {
+        hero_title: aboutForm.hero_title || null,
+        hero_subtitle: aboutForm.hero_subtitle || null,
+        featured_title: aboutForm.featured_title || null,
+        featured_subtitle: aboutForm.featured_subtitle || null,
+        about_title: aboutForm.about_title || null,
+        about_bio: aboutForm.about_bio || null,
+      })
+      await fetchAboutInfo()
+      setShowAboutEdit(false)
+      alert('Home page info updated successfully!')
+    } catch (error) {
+      console.error('Error updating home info:', error)
+      alert('Failed to update home page info. Please try again.')
+    } finally {
+      setSavingAbout(false)
     }
   }
 
@@ -394,6 +432,53 @@ function DashboardPage() {
               </div>
             ) : (
               <p className="text-gray-500 text-sm">No contact info set yet. Click Edit to add your details.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Home Page Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Home Page</h2>
+            <button
+              onClick={() => {
+                setAboutForm({
+                  hero_title: aboutInfo?.hero_title || '',
+                  hero_subtitle: aboutInfo?.hero_subtitle || '',
+                  featured_title: aboutInfo?.featured_title || '',
+                  featured_subtitle: aboutInfo?.featured_subtitle || '',
+                  about_title: aboutInfo?.about_title || '',
+                  about_bio: aboutInfo?.about_bio || '',
+                })
+                setShowAboutEdit(true)
+              }}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="text-sm">Edit</span>
+            </button>
+          </div>
+          <div className="p-6">
+            {aboutInfo ? (
+              <div className="text-sm space-y-3">
+                <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wider">Hero Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div><span className="font-medium text-gray-700">Title:</span> <span className="text-gray-600">{aboutInfo.hero_title || '—'}</span></div>
+                  <div><span className="font-medium text-gray-700">Subtitle:</span> <span className="text-gray-600">{aboutInfo.hero_subtitle || '—'}</span></div>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wider pt-2 border-t border-gray-100">Featured Work Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div><span className="font-medium text-gray-700">Title:</span> <span className="text-gray-600">{aboutInfo.featured_title || '—'}</span></div>
+                  <div><span className="font-medium text-gray-700">Subtitle:</span> <span className="text-gray-600">{aboutInfo.featured_subtitle || '—'}</span></div>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wider pt-2 border-t border-gray-100">About Section</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><span className="font-medium text-gray-700">Title:</span> <span className="text-gray-600">{aboutInfo.about_title || '—'}</span></div>
+                  <div><span className="font-medium text-gray-700">Bio:</span> <span className="text-gray-600">{aboutInfo.about_bio || '—'}</span></div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No home page info set yet. Click Edit to add your details.</p>
             )}
           </div>
         </div>
@@ -607,6 +692,108 @@ function DashboardPage() {
                       Cancel
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Home Page Edit Modal */}
+        {showAboutEdit && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Home Page</h2>
+                  <button onClick={() => setShowAboutEdit(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-800 text-sm">Hero Section</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={aboutForm.hero_title}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, hero_title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="Capturing Moments"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <input
+                      type="text"
+                      value={aboutForm.hero_subtitle}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, hero_subtitle: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="Through the lenses of my camera..."
+                    />
+                  </div>
+
+                  <hr className="border-gray-200" />
+                  <h3 className="font-semibold text-gray-800 text-sm">Featured Work Section</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={aboutForm.featured_title}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, featured_title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="Featured Work"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Subtitle</label>
+                    <input
+                      type="text"
+                      value={aboutForm.featured_subtitle}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, featured_subtitle: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="A selection of my favorite photographs"
+                    />
+                  </div>
+
+                  <hr className="border-gray-200" />
+                  <h3 className="font-semibold text-gray-800 text-sm">About Section</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                    <input
+                      type="text"
+                      value={aboutForm.about_title}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, about_title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="About the Photographer"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                    <textarea
+                      value={aboutForm.about_bio}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, about_bio: e.target.value }))}
+                      rows={6}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="Write about yourself..."
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={handleAboutSave}
+                    disabled={savingAbout}
+                    className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 disabled:opacity-50 cursor-pointer"
+                  >
+                    {savingAbout ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setShowAboutEdit(false)}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-100 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>

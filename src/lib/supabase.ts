@@ -80,3 +80,15 @@ export interface ContactInfo {
   subheading: string | null
   updated_at: string
 }
+
+export interface AboutInfo {
+  id: string
+  user_id: string
+  hero_title: string | null
+  hero_subtitle: string | null
+  featured_title: string | null
+  featured_subtitle: string | null
+  about_title: string | null
+  about_bio: string | null
+  updated_at: string
+}
