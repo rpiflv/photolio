@@ -387,3 +387,27 @@ export async function addCamera(name: string): Promise<DBCamera | null> {
   return data
 }
 
+// Update a photo's metadata
+export async function updatePhoto(
+  photoId: string,
+  updates: {
+    title?: string
+    category?: string
+    camera?: string | null
+  }
+): Promise<Photo | null> {
+  const { data, error } = await supabase
+    .from('photos')
+    .update(updates)
+    .eq('id', photoId)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating photo:', error)
+    throw error
+  }
+
+  return dbPhotoToPhoto(data)
+}
+

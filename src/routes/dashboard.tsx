@@ -1,10 +1,10 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto } from '../data/photos'
 import type { Photo } from '../data/photos'
 import type { Camera } from '../lib/supabase'
-import { BarChart3, Heart, Loader2, Upload, Trash2, X } from 'lucide-react'
+import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
@@ -28,6 +28,10 @@ function DashboardPage() {
     lens: '',
   })
   const [customCamera, setCustomCamera] = useState('')
+  const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
+  const [editForm, setEditForm] = useState({ title: '', category: '', camera: '' })
+  const [editCustomCamera, setEditCustomCamera] = useState('')
+  const [saving, setSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchCameras = async () => {
@@ -155,6 +159,40 @@ function DashboardPage() {
     }
   }
 
+  const handleEdit = async () => {
+    if (!editingPhoto || !editForm.title) return
+
+    setSaving(true)
+    try {
+      let cameraValue = editForm.camera === '__other__' ? editCustomCamera.trim() : editForm.camera
+
+      // If adding a new camera, insert it into the cameras table
+      if (editForm.camera === '__other__' && cameraValue) {
+        try {
+          await addCamera(cameraValue)
+        } catch {
+          // Camera may already exist
+        }
+      }
+
+      await updatePhoto(editingPhoto.id, {
+        title: editForm.title,
+        category: editForm.category,
+        camera: cameraValue || null,
+      })
+
+      await fetchPhotos()
+      await fetchCameras()
+      setEditingPhoto(null)
+      alert('Photo updated successfully!')
+    } catch (error) {
+      console.error('Error updating photo:', error)
+      alert('Failed to update photo. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -204,7 +242,7 @@ function DashboardPage() {
             </div>
             <button
               onClick={() => setShowUploadModal(true)}
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center space-x-2 border border-gray-300 text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg transition-colors cursor-pointer"
             >
               <Upload className="h-5 w-5" />
               <span>Upload Photo</span>
@@ -328,13 +366,30 @@ function DashboardPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <button
-                          onClick={() => handleDelete(photo.id, photo.title)}
-                          className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Delete photo"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center justify-end space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingPhoto(photo)
+                              setEditForm({
+                                title: photo.title,
+                                category: photo.category,
+                                camera: photo.metadata?.camera || '',
+                              })
+                              setEditCustomCamera('')
+                            }}
+                            className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                            title="Edit photo"
+                          >
+                            <Pencil className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(photo.id, photo.title)}
+                            className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                            title="Delete photo"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -520,6 +575,114 @@ function DashboardPage() {
                         setSelectedFile(null)
                       }}
                       disabled={uploading}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        {editingPhoto && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-lg w-full">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Photo</h2>
+                  <button
+                    onClick={() => setEditingPhoto(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={editForm.category}
+                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="portrait">Portrait</option>
+                      <option value="landscape">Landscape</option>
+                      <option value="street">Street</option>
+                      <option value="nature">Nature</option>
+                      <option value="architecture">Architecture</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Camera */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Camera
+                    </label>
+                    <select
+                      value={editForm.camera}
+                      onChange={(e) => {
+                        setEditForm({ ...editForm, camera: e.target.value })
+                        if (e.target.value !== '__other__') setEditCustomCamera('')
+                      }}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">No camera</option>
+                      {cameras.map((cam) => (
+                        <option key={cam.id} value={cam.name}>{cam.name}</option>
+                      ))}
+                      <option value="__other__">Other (add new)</option>
+                    </select>
+                    {editForm.camera === '__other__' && (
+                      <input
+                        type="text"
+                        value={editCustomCamera}
+                        onChange={(e) => setEditCustomCamera(e.target.value)}
+                        className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter new camera name"
+                      />
+                    )}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={handleEdit}
+                      disabled={!editForm.title || saving}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <span>Save Changes</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setEditingPhoto(null)}
+                      disabled={saving}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Cancel
