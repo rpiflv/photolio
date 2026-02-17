@@ -1,12 +1,12 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
-import type { Camera, ContactInfo, AboutInfo } from '../lib/supabase'
-import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings } from 'lucide-react'
+import type { Camera, ContactInfo, AboutInfo, Category } from '../lib/supabase'
+import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings, Plus } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
@@ -16,6 +16,10 @@ function DashboardPage() {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [cameras, setCameras] = useState<Camera[]>([])
+  const [dbCategories, setDbCategories] = useState<Category[]>([])
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null)
+  const [renameCategoryName, setRenameCategoryName] = useState('')
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -24,7 +28,7 @@ function DashboardPage() {
   const [uploadForm, setUploadForm] = useState({
     title: '',
     description: '',
-    category: 'other' as 'portrait' | 'landscape' | 'street' | 'nature' | 'architecture' | 'other',
+    category: 'other' as string,
     location: '',
     camera: '',
     lens: '',
@@ -65,6 +69,15 @@ function DashboardPage() {
     }
   }
 
+  const fetchCategories = async () => {
+    try {
+      const data = await getRawCategories()
+      setDbCategories(data)
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+    }
+  }
+
   const fetchContactInfo = async () => {
     try {
       const data = await getMyContactInfo()
@@ -102,6 +115,7 @@ function DashboardPage() {
     if (!adminLoading && isAdmin) {
       fetchPhotos()
       fetchCameras()
+      fetchCategories()
       fetchContactInfo()
       fetchAboutInfo()
     }
@@ -321,9 +335,6 @@ function DashboardPage() {
 
   const totalLikes = photos.reduce((sum, photo) => sum + (photo.likesCount || 0), 0)
 
-  // Derive unique categories from photos
-  const categories = Array.from(new Set(photos.map(p => p.category))).sort()
-
   // Derive unique cameras from photos
   const photoCameras = Array.from(new Set(photos.map(p => p.metadata?.camera).filter(Boolean))).sort() as string[]
 
@@ -483,6 +494,121 @@ function DashboardPage() {
           </div>
         </div>
 
+        {/* Categories Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Gallery Categories</h2>
+          </div>
+          <div className="p-6">
+            {/* Add new category */}
+            <div className="flex items-end gap-3 mb-4">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Category Name</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  placeholder="e.g. Street Photography"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newCategoryName.trim()) return
+                  const slug = newCategoryName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                  try {
+                    await addCategory(slug, newCategoryName)
+                    setNewCategoryName('')
+                    await fetchCategories()
+                  } catch (error) {
+                    alert('Failed to add category. It may already exist.')
+                  }
+                }}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </button>
+            </div>
+
+            {/* Category list */}
+            <div className="divide-y divide-gray-100">
+              {dbCategories.map((cat) => (
+                <div key={cat.id} className="flex items-center justify-between py-2">
+                  {renamingCategory === cat.id ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={renameCategoryName}
+                        onChange={(e) => setRenameCategoryName(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        autoFocus
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!renameCategoryName.trim()) return
+                          try {
+                            await renameCategory(cat.id, renameCategoryName)
+                            setRenamingCategory(null)
+                            await fetchCategories()
+                          } catch (error) {
+                            alert('Failed to rename category.')
+                          }
+                        }}
+                        className="text-xs px-2 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setRenamingCategory(null)}
+                        className="text-xs px-2 py-1 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">{cat.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setRenamingCategory(cat.id)
+                            setRenameCategoryName(cat.name)
+                          }}
+                          className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                          title="Rename"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete category "${cat.name}"? Photos in this category won't be deleted, but they'll have an unlinked category.`)) return
+                            try {
+                              await deleteCategory(cat.id)
+                              await fetchCategories()
+                            } catch (error) {
+                              alert('Failed to delete category.')
+                            }
+                          }}
+                          className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              {dbCategories.length === 0 && (
+                <p className="text-gray-500 text-sm py-2">No categories yet. Add one above.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Photos Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -495,8 +621,8 @@ function DashboardPage() {
                   className="text-sm border border-gray-300 rounded-md px-3 py-1.5 text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
                 >
                   <option value="">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                  {dbCategories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
                 <select
@@ -884,12 +1010,9 @@ function DashboardPage() {
                       onChange={(e) => setUploadForm({ ...uploadForm, category: e.target.value as any })}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="portrait">Portrait</option>
-                      <option value="landscape">Landscape</option>
-                      <option value="street">Street</option>
-                      <option value="nature">Nature</option>
-                      <option value="architecture">Architecture</option>
-                      <option value="other">Other</option>
+                      {dbCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -1026,12 +1149,9 @@ function DashboardPage() {
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="portrait">Portrait</option>
-                      <option value="landscape">Landscape</option>
-                      <option value="street">Street</option>
-                      <option value="nature">Nature</option>
-                      <option value="architecture">Architecture</option>
-                      <option value="other">Other</option>
+                      {dbCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
                     </select>
                   </div>
 

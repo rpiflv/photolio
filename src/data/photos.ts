@@ -1,6 +1,6 @@
 import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } from '../lib/s3'
 import { supabase } from '../lib/supabase'
-import type { Photo as DBPhoto, Camera as DBCamera } from '../lib/supabase'
+import type { Photo as DBPhoto, Camera as DBCamera, Category as DBCategory } from '../lib/supabase'
 import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
 
 // Query keys for TanStack Query
@@ -22,7 +22,7 @@ export interface Photo {
   src: string
   srcset?: string
   alt: string
-  category: 'portrait' | 'landscape' | 'street' | 'nature' | 'architecture' | 'other'
+  category: string
   date: string
   featured?: boolean
   dimensions?: {
@@ -174,6 +174,67 @@ export async function getCategories() {
       count: counts[cat.id] || 0
     })) || [])
   ]
+}
+
+// Get raw categories (for management)
+export async function getRawCategories(): Promise<DBCategory[]> {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching categories:', error)
+    return []
+  }
+
+  return data || []
+}
+
+// Add a new category
+export async function addCategory(id: string, name: string): Promise<DBCategory | null> {
+  const { data, error } = await supabase
+    .from('categories')
+    .insert({ id: id.trim().toLowerCase(), name: name.trim() })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error adding category:', error)
+    throw error
+  }
+
+  return data
+}
+
+// Rename a category
+export async function renameCategory(id: string, newName: string): Promise<DBCategory | null> {
+  const { data, error } = await supabase
+    .from('categories')
+    .update({ name: newName.trim() })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error renaming category:', error)
+    throw error
+  }
+
+  return data
+}
+
+// Delete a category
+export async function deleteCategory(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting category:', error)
+    throw error
+  }
 }
 
 // Get responsive image URLs
