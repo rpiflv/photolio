@@ -2,9 +2,10 @@ import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
 import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto } from '../data/photos'
+import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import type { Photo } from '../data/photos'
-import type { Camera } from '../lib/supabase'
-import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil } from 'lucide-react'
+import type { Camera, ContactInfo } from '../lib/supabase'
+import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
@@ -32,6 +33,22 @@ function DashboardPage() {
   const [editForm, setEditForm] = useState({ title: '', category: '', camera: '' })
   const [editCustomCamera, setEditCustomCamera] = useState('')
   const [saving, setSaving] = useState(false)
+  const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null)
+  const [showContactEdit, setShowContactEdit] = useState(false)
+  const [contactForm, setContactForm] = useState({
+    email: '',
+    phone: '',
+    location: '',
+    twitter_handle: '',
+    twitter_url: '',
+    instagram_handle: '',
+    instagram_url: '',
+    heading: '',
+    subheading: '',
+  })
+  const [savingContact, setSavingContact] = useState(false)
+  const [filterCategory, setFilterCategory] = useState('')
+  const [filterCamera, setFilterCamera] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchCameras = async () => {
@@ -40,6 +57,15 @@ function DashboardPage() {
       setCameras(data)
     } catch (error) {
       console.error('Error fetching cameras:', error)
+    }
+  }
+
+  const fetchContactInfo = async () => {
+    try {
+      const data = await getMyContactInfo()
+      setContactInfo(data)
+    } catch (error) {
+      console.error('Error fetching contact info:', error)
     }
   }
 
@@ -62,6 +88,7 @@ function DashboardPage() {
     if (!adminLoading && isAdmin) {
       fetchPhotos()
       fetchCameras()
+      fetchContactInfo()
     }
   }, [isAdmin, adminLoading])
 
@@ -193,6 +220,32 @@ function DashboardPage() {
     }
   }
 
+  const handleContactSave = async () => {
+    if (!contactInfo) return
+    setSavingContact(true)
+    try {
+      await updateContactInfo(contactInfo.id, {
+        email: contactForm.email || null,
+        phone: contactForm.phone || null,
+        location: contactForm.location || null,
+        twitter_handle: contactForm.twitter_handle || null,
+        twitter_url: contactForm.twitter_url || null,
+        instagram_handle: contactForm.instagram_handle || null,
+        instagram_url: contactForm.instagram_url || null,
+        heading: contactForm.heading || null,
+        subheading: contactForm.subheading || null,
+      })
+      await fetchContactInfo()
+      setShowContactEdit(false)
+      alert('Contact info updated successfully!')
+    } catch (error) {
+      console.error('Error updating contact info:', error)
+      alert('Failed to update contact info. Please try again.')
+    } finally {
+      setSavingContact(false)
+    }
+  }
+
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
@@ -229,6 +282,19 @@ function DashboardPage() {
   }
 
   const totalLikes = photos.reduce((sum, photo) => sum + (photo.likesCount || 0), 0)
+
+  // Derive unique categories from photos
+  const categories = Array.from(new Set(photos.map(p => p.category))).sort()
+
+  // Derive unique cameras from photos
+  const photoCameras = Array.from(new Set(photos.map(p => p.metadata?.camera).filter(Boolean))).sort() as string[]
+
+  // Filter photos by category and/or camera
+  const filteredPhotos = photos.filter(photo => {
+    const matchesCategory = !filterCategory || photo.category === filterCategory
+    const matchesCamera = !filterCamera || photo.metadata?.camera === filterCamera
+    return matchesCategory && matchesCamera
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
@@ -292,10 +358,82 @@ function DashboardPage() {
           </div>
         </div>
 
+        {/* Contact Info Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Contact Page</h2>
+            <button
+              onClick={() => {
+                setContactForm({
+                  email: contactInfo?.email || '',
+                  phone: contactInfo?.phone || '',
+                  location: contactInfo?.location || '',
+                  twitter_handle: contactInfo?.twitter_handle || '',
+                  twitter_url: contactInfo?.twitter_url || '',
+                  instagram_handle: contactInfo?.instagram_handle || '',
+                  instagram_url: contactInfo?.instagram_url || '',
+                  heading: contactInfo?.heading || '',
+                  subheading: contactInfo?.subheading || '',
+                })
+                setShowContactEdit(true)
+              }}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <Settings className="h-5 w-5" />
+              <span className="text-sm">Edit</span>
+            </button>
+          </div>
+          <div className="p-6">
+            {contactInfo ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div><span className="font-medium text-gray-700">Email:</span> <span className="text-gray-600">{contactInfo.email || '—'}</span></div>
+                <div><span className="font-medium text-gray-700">Phone:</span> <span className="text-gray-600">{contactInfo.phone || '—'}</span></div>
+                <div><span className="font-medium text-gray-700">Location:</span> <span className="text-gray-600">{contactInfo.location || '—'}</span></div>
+                <div><span className="font-medium text-gray-700">X (Twitter):</span> <span className="text-gray-600">{contactInfo.twitter_handle || '—'}</span></div>
+                <div><span className="font-medium text-gray-700">Instagram:</span> <span className="text-gray-600">{contactInfo.instagram_handle || '—'}</span></div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No contact info set yet. Click Edit to add your details.</p>
+            )}
+          </div>
+        </div>
+
         {/* Photos Table */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Photos by Popularity</h2>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-lg font-semibold text-gray-900">Photos by Popularity</h2>
+              <div className="flex items-center gap-3">
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-md px-3 py-1.5 text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+                  ))}
+                </select>
+                <select
+                  value={filterCamera}
+                  onChange={(e) => setFilterCamera(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-md px-3 py-1.5 text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
+                >
+                  <option value="">All Cameras</option>
+                  {photoCameras.map(cam => (
+                    <option key={cam} value={cam}>{cam}</option>
+                  ))}
+                </select>
+                {(filterCategory || filterCamera) && (
+                  <button
+                    onClick={() => { setFilterCategory(''); setFilterCamera('') }}
+                    className="text-xs text-gray-500 hover:text-gray-700 underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           {loading ? (
@@ -328,7 +466,7 @@ function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {photos.map((photo) => (
+                  {filteredPhotos.map((photo) => (
                     <tr key={photo.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <img
@@ -398,6 +536,82 @@ function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Contact Edit Modal */}
+        {showContactEdit && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Edit Contact Info</h2>
+                  <button onClick={() => setShowContactEdit(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Page Heading</label>
+                    <input type="text" value={contactForm.heading} onChange={(e) => setContactForm({ ...contactForm, heading: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Get In Touch" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Page Subheading</label>
+                    <input type="text" value={contactForm.subheading} onChange={(e) => setContactForm({ ...contactForm, subheading: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Ready to capture your special moments?" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" value={contactForm.email} onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="your.email@example.com" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input type="tel" value={contactForm.phone} onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+1 (555) 123-4567" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                    <input type="text" value={contactForm.location} onChange={(e) => setContactForm({ ...contactForm, location: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Your City, Country" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Twitter Handle</label>
+                    <input type="text" value={contactForm.twitter_handle} onChange={(e) => setContactForm({ ...contactForm, twitter_handle: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="@yourhandle" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Twitter URL</label>
+                    <input type="url" value={contactForm.twitter_url} onChange={(e) => setContactForm({ ...contactForm, twitter_url: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://x.com/yourhandle" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram Handle</label>
+                    <input type="text" value={contactForm.instagram_handle} onChange={(e) => setContactForm({ ...contactForm, instagram_handle: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="@yourhandle" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Instagram URL</label>
+                    <input type="url" value={contactForm.instagram_url} onChange={(e) => setContactForm({ ...contactForm, instagram_url: e.target.value })} className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://instagram.com/yourhandle" />
+                  </div>
+
+                  <div className="flex space-x-3 pt-4">
+                    <button
+                      onClick={handleContactSave}
+                      disabled={savingContact}
+                      className="flex-1 bg-gray-900 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2 cursor-pointer"
+                    >
+                      {savingContact ? (
+                        <><Loader2 className="h-5 w-5 animate-spin" /><span>Saving...</span></>
+                      ) : (
+                        <span>Save Changes</span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setShowContactEdit(false)}
+                      disabled={savingContact}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Upload Modal */}
         {showUploadModal && (

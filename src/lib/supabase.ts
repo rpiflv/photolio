@@ -12,6 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 // Types for your database
 export interface Photo {
   id: string
+  user_id: string
   title: string
   description: string | null
   s3_key: string
@@ -63,4 +64,19 @@ export interface Camera {
   id: string
   name: string
   created_at: string
+}
+
+export interface ContactInfo {
+  id: string
+  user_id: string
+  email: string | null
+  phone: string | null
+  location: string | null
+  twitter_handle: string | null
+  twitter_url: string | null
+  instagram_handle: string | null
+  instagram_url: string | null
+  heading: string | null
+  subheading: string | null
+  updated_at: string
 }
