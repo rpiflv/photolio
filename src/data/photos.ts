@@ -448,6 +448,32 @@ export async function addCamera(name: string): Promise<DBCamera | null> {
   return data
 }
 
+// Rename a camera
+export async function renameCamera(id: string, newName: string): Promise<void> {
+  const { error } = await supabase
+    .from('cameras')
+    .update({ name: newName.trim() })
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error renaming camera:', error)
+    throw error
+  }
+}
+
+// Delete a camera
+export async function deleteCamera(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('cameras')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting camera:', error)
+    throw error
+  }
+}
+
 // Update a photo's metadata
 export async function updatePhoto(
   photoId: string,

@@ -29,7 +29,7 @@ function GalleryPage() {
   const filteredPhotos = photos
 
   return (
-    <div className="min-h-screen bg-[#f6f4f2] py-16">
+    <div className="min-h-screen bg-[#f6f4f2] pt-24 pb-16">
       <GalleryInfoPopup />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">

@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
@@ -18,8 +18,11 @@ function DashboardPage() {
   const [cameras, setCameras] = useState<Camera[]>([])
   const [dbCategories, setDbCategories] = useState<Category[]>([])
   const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCameraName, setNewCameraName] = useState('')
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null)
   const [renameCategoryName, setRenameCategoryName] = useState('')
+  const [renamingCamera, setRenamingCamera] = useState<string | null>(null)
+  const [renameCameraName, setRenameCameraName] = useState('')
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -33,10 +36,8 @@ function DashboardPage() {
     camera: '',
     lens: '',
   })
-  const [customCamera, setCustomCamera] = useState('')
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
   const [editForm, setEditForm] = useState({ title: '', category: '', camera: '' })
-  const [editCustomCamera, setEditCustomCamera] = useState('')
   const [saving, setSaving] = useState(false)
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null)
   const [showContactEdit, setShowContactEdit] = useState(false)
@@ -144,16 +145,6 @@ function DashboardPage() {
       const photoId = crypto.randomUUID()
       
       console.log('Starting upload for:', selectedFile.name)
-      let cameraValue = uploadForm.camera === '__other__' ? customCamera.trim() : uploadForm.camera
-
-      // If adding a new camera, insert it into the cameras table
-      if (uploadForm.camera === '__other__' && cameraValue) {
-        try {
-          await addCamera(cameraValue)
-        } catch {
-          // Camera may already exist, that's fine
-        }
-      }
 
       await uploadPhoto(selectedFile, {
         id: photoId,
@@ -161,14 +152,13 @@ function DashboardPage() {
         description: uploadForm.description || undefined,
         category: uploadForm.category,
         location: uploadForm.location || undefined,
-        camera: cameraValue || undefined,
+        camera: uploadForm.camera || undefined,
         lens: uploadForm.lens || undefined,
       })
 
       console.log('Upload successful, refreshing photos...')
-      // Refresh photos list and cameras
+      // Refresh photos list
       await fetchPhotos()
-      await fetchCameras()
       
       // Reset form
       setShowUploadModal(false)
@@ -182,7 +172,6 @@ function DashboardPage() {
         camera: '',
         lens: '',
       })
-      setCustomCamera('')
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -220,25 +209,13 @@ function DashboardPage() {
 
     setSaving(true)
     try {
-      let cameraValue = editForm.camera === '__other__' ? editCustomCamera.trim() : editForm.camera
-
-      // If adding a new camera, insert it into the cameras table
-      if (editForm.camera === '__other__' && cameraValue) {
-        try {
-          await addCamera(cameraValue)
-        } catch {
-          // Camera may already exist
-        }
-      }
-
       await updatePhoto(editingPhoto.id, {
         title: editForm.title,
         category: editForm.category,
-        camera: cameraValue || null,
+        camera: editForm.camera || null,
       })
 
       await fetchPhotos()
-      await fetchCameras()
       setEditingPhoto(null)
       alert('Photo updated successfully!')
     } catch (error) {
@@ -494,8 +471,11 @@ function DashboardPage() {
           </div>
         </div>
 
+        {/* Categories & Cameras */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
         {/* Categories Section */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Gallery Categories</h2>
           </div>
@@ -607,6 +587,122 @@ function DashboardPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Cameras Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Cameras</h2>
+          </div>
+          <div className="p-6">
+            {/* Add new camera */}
+            <div className="flex items-end gap-3 mb-4">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Camera Name</label>
+                <input
+                  type="text"
+                  value={newCameraName}
+                  onChange={(e) => setNewCameraName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  placeholder="e.g. Canon EOS R5"
+                />
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newCameraName.trim()) return
+                  try {
+                    await addCamera(newCameraName.trim())
+                    setNewCameraName('')
+                    await fetchCameras()
+                  } catch (error) {
+                    alert('Failed to add camera. It may already exist.')
+                  }
+                }}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </button>
+            </div>
+
+            {/* Camera list */}
+            <div className="divide-y divide-gray-100">
+              {cameras.map((cam) => (
+                <div key={cam.id} className="flex items-center justify-between py-2">
+                  {renamingCamera === cam.id ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={renameCameraName}
+                        onChange={(e) => setRenameCameraName(e.target.value)}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                        autoFocus
+                      />
+                      <button
+                        onClick={async () => {
+                          if (!renameCameraName.trim()) return
+                          try {
+                            await renameCamera(cam.id, renameCameraName)
+                            setRenamingCamera(null)
+                            await fetchCameras()
+                          } catch (error) {
+                            alert('Failed to rename camera.')
+                          }
+                        }}
+                        className="text-xs px-2 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setRenamingCamera(null)}
+                        className="text-xs px-2 py-1 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">{cam.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setRenamingCamera(cam.id)
+                            setRenameCameraName(cam.name)
+                          }}
+                          className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                          title="Rename"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete camera "${cam.name}"? Photos using this camera won't be deleted, but they'll have an unlinked camera.`)) return
+                            try {
+                              await deleteCamera(cam.id)
+                              await fetchCameras()
+                            } catch (error) {
+                              alert('Failed to delete camera.')
+                            }
+                          }}
+                          className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+              {cameras.length === 0 && (
+                <p className="text-gray-500 text-sm py-2">No cameras yet. Add one above.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         </div>
 
         {/* Photos Table */}
@@ -724,7 +820,6 @@ function DashboardPage() {
                                 category: photo.category,
                                 camera: photo.metadata?.camera || '',
                               })
-                              setEditCustomCamera('')
                             }}
                             className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
                             title="Edit photo"
@@ -1037,27 +1132,14 @@ function DashboardPage() {
                     </label>
                     <select
                       value={uploadForm.camera}
-                      onChange={(e) => {
-                        setUploadForm({ ...uploadForm, camera: e.target.value })
-                        if (e.target.value !== '__other__') setCustomCamera('')
-                      }}
+                      onChange={(e) => setUploadForm({ ...uploadForm, camera: e.target.value })}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">Select a camera</option>
                       {cameras.map((cam) => (
                         <option key={cam.id} value={cam.name}>{cam.name}</option>
                       ))}
-                      <option value="__other__">Other (add new)</option>
                     </select>
-                    {uploadForm.camera === '__other__' && (
-                      <input
-                        type="text"
-                        value={customCamera}
-                        onChange={(e) => setCustomCamera(e.target.value)}
-                        className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter new camera name"
-                      />
-                    )}
                   </div>
 
                   {/* Lens */}
@@ -1162,27 +1244,14 @@ function DashboardPage() {
                     </label>
                     <select
                       value={editForm.camera}
-                      onChange={(e) => {
-                        setEditForm({ ...editForm, camera: e.target.value })
-                        if (e.target.value !== '__other__') setEditCustomCamera('')
-                      }}
+                      onChange={(e) => setEditForm({ ...editForm, camera: e.target.value })}
                       className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       <option value="">No camera</option>
                       {cameras.map((cam) => (
                         <option key={cam.id} value={cam.name}>{cam.name}</option>
                       ))}
-                      <option value="__other__">Other (add new)</option>
                     </select>
-                    {editForm.camera === '__other__' && (
-                      <input
-                        type="text"
-                        value={editCustomCamera}
-                        onChange={(e) => setEditCustomCamera(e.target.value)}
-                        className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter new camera name"
-                      />
-                    )}
                   </div>
 
                   {/* Action Buttons */}
