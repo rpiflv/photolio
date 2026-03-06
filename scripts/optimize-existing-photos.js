@@ -1,25 +1,36 @@
 #!/usr/bin/env node
 import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js'
-import { S3Client, GetObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3'
-import { uploadImageToS3 } from '../src/lib/imageService.js'
+import { S3Client, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3'
 import { optimizeImage } from './imageOptimizer.js'
 import { Readable } from 'stream'
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 )
 
 const s3Client = new S3Client({
-  region: process.env.VITE_AWS_REGION,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 })
 
-const BUCKET_NAME = process.env.VITE_S3_BUCKET_NAME
+const BUCKET_NAME = process.env.S3_BUCKET_NAME
+
+async function uploadImageToS3(key, buffer, contentType, metadata) {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+    Metadata: metadata,
+    CacheControl: 'public, max-age=31536000, immutable',
+  })
+  await s3Client.send(command)
+}
 
 async function streamToBuffer(stream) {
   return new Promise((resolve, reject) => {

@@ -15,10 +15,10 @@ function getEnv(key: string): string {
 
 function createS3Client() {
   return new S3Client({
-    region: getEnv('VITE_AWS_REGION'),
+    region: getEnv('AWS_REGION'),
     credentials: {
-      accessKeyId: getEnv('VITE_AWS_ACCESS_KEY_ID'),
-      secretAccessKey: getEnv('VITE_AWS_SECRET_ACCESS_KEY'),
+      accessKeyId: getEnv('AWS_ACCESS_KEY_ID'),
+      secretAccessKey: getEnv('AWS_SECRET_ACCESS_KEY'),
     },
   })
 }
@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const s3Key: string = body.s3Key
-  const bucketName = getEnv('VITE_S3_BUCKET_NAME')
+  const bucketName = getEnv('S3_BUCKET_NAME')
 
   if (!bucketName) {
     throw createError({ statusCode: 500, statusMessage: 'S3 bucket not configured' })

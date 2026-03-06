@@ -55,7 +55,7 @@ function DashboardPage() {
   const [savingContact, setSavingContact] = useState(false)
   const [aboutInfo, setAboutInfo] = useState<AboutInfo | null>(null)
   const [showAboutEdit, setShowAboutEdit] = useState(false)
-  const [aboutForm, setAboutForm] = useState({ hero_title: '', hero_subtitle: '', featured_title: '', featured_subtitle: '', about_title: '', about_bio: '' })
+  const [aboutForm, setAboutForm] = useState({ site_name: '', hero_title: '', hero_subtitle: '', featured_title: '', featured_subtitle: '', about_title: '', about_bio: '' })
   const [savingAbout, setSavingAbout] = useState(false)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterCamera, setFilterCamera] = useState('')
@@ -176,7 +176,7 @@ function DashboardPage() {
         fileInputRef.current.value = ''
       }
       
-      alert('Photo uploaded successfully!\n\nIMPORTANT: Run "npm run optimize-existing" in the terminal to generate thumbnails and optimized versions.')
+      alert('Photo uploaded successfully!')
     } catch (error) {
       console.error('Error uploading photo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload photo. Please try again.'
@@ -231,6 +231,7 @@ function DashboardPage() {
     setSavingAbout(true)
     try {
       await updateHomeInfo(aboutInfo.id, {
+        site_name: aboutForm.site_name || null,
         hero_title: aboutForm.hero_title || null,
         hero_subtitle: aboutForm.hero_subtitle || null,
         featured_title: aboutForm.featured_title || null,
@@ -431,6 +432,7 @@ function DashboardPage() {
             <button
               onClick={() => {
                 setAboutForm({
+                  site_name: aboutInfo?.site_name || '',
                   hero_title: aboutInfo?.hero_title || '',
                   hero_subtitle: aboutInfo?.hero_subtitle || '',
                   featured_title: aboutInfo?.featured_title || '',
@@ -932,6 +934,20 @@ function DashboardPage() {
                 </div>
 
                 <div className="space-y-4">
+                  <h3 className="font-semibold text-gray-800 text-sm">Site Branding</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Site Name</label>
+                    <input
+                      type="text"
+                      value={aboutForm.site_name}
+                      onChange={(e) => setAboutForm(prev => ({ ...prev, site_name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                      placeholder="My Photography"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Shown in the header and browser tab</p>
+                  </div>
+
+                  <hr className="border-gray-200" />
                   <h3 className="font-semibold text-gray-800 text-sm">Hero Section</h3>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>

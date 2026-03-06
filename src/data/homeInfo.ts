@@ -35,6 +35,7 @@ export async function getMyHomeInfo(): Promise<AboutInfo | null> {
         .from('home_info')
         .insert({
           user_id: user.id,
+          site_name: import.meta.env.VITE_SITE_NAME || 'Photo Portfolio',
           hero_title: 'Capturing Moments',
           hero_subtitle: 'Through the lenses of my camera, I tell stories that words cannot express.',
           featured_title: 'Featured Work',

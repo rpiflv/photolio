@@ -3,11 +3,21 @@ import { Aperture, Menu, X, User, LogOut, BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdmin } from '../hooks/useAdmin'
+import { useQuery } from '@tanstack/react-query'
+import { getHomeInfo } from '../data/homeInfo'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
   const { isAdmin } = useAdmin()
+
+  const { data: homeInfo } = useQuery({
+    queryKey: ['homeInfo'],
+    queryFn: getHomeInfo,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const siteName = homeInfo?.site_name || import.meta.env.VITE_SITE_NAME || 'Photo Portfolio'
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-md">
@@ -16,7 +26,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Aperture className="h-8 w-8 text-gray-900" />
-            <span className="text-xl font-bold text-gray-900">FR Photo</span>
+            <span className="text-xl font-bold text-gray-900">{siteName}</span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -74,11 +74,11 @@ This migration script:
 
 ### Environment Variables
 ```env
-# Required
-VITE_AWS_REGION=us-east-1
-VITE_AWS_ACCESS_KEY_ID=your_key
-VITE_AWS_SECRET_ACCESS_KEY=your_secret
-VITE_S3_BUCKET_NAME=your-bucket
+# Required (server-only — no VITE_ prefix)
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_key
+AWS_SECRET_ACCESS_KEY=your_secret
+S3_BUCKET_NAME=your-bucket
 
 # Optional - for CDN
 VITE_CLOUDFRONT_DOMAIN=d123456.cloudfront.net

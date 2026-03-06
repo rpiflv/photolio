@@ -86,6 +86,7 @@ export interface ContactInfo {
 export interface AboutInfo {
   id: string
   user_id: string
+  site_name: string | null
   hero_title: string | null
   hero_subtitle: string | null
   featured_title: string | null

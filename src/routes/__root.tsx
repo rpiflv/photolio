@@ -35,7 +35,7 @@ export const Route = createRootRoute({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'PhotoFolio - Professional Photography Portfolio',
+        title: `${import.meta.env.VITE_SITE_NAME || 'Photo Portfolio'} - Professional Photography Portfolio`,
       },
       {
         name: 'description',
@@ -43,7 +43,7 @@ export const Route = createRootRoute({
       },
       {
         property: 'og:title',
-        content: 'PhotoFolio - Professional Photography Portfolio',
+        content: `${import.meta.env.VITE_SITE_NAME || 'Photo Portfolio'} - Professional Photography Portfolio`,
       },
       {
         property: 'og:description',
@@ -55,11 +55,11 @@ export const Route = createRootRoute({
       },
       {
         property: 'og:url',
-        content: 'https://www.flavioripa.com/',
+        content: import.meta.env.VITE_SITE_URL || '',
       },
       {
         property: 'og:image',
-        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
+        content: `${import.meta.env.VITE_SITE_URL || ''}/images/hero/hero-background.jpg`,
       },
       {
         property: 'og:image:width',
@@ -71,7 +71,7 @@ export const Route = createRootRoute({
       },
       {
         property: 'og:site_name',
-        content: 'PhotoFolio',
+        content: import.meta.env.VITE_SITE_NAME || 'Photo Portfolio',
       },
       {
         name: 'twitter:card',
@@ -79,7 +79,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'twitter:title',
-        content: 'PhotoFolio - Professional Photography Portfolio',
+        content: `${import.meta.env.VITE_SITE_NAME || 'Photo Portfolio'} - Professional Photography Portfolio`,
       },
       {
         name: 'twitter:description',
@@ -87,15 +87,7 @@ export const Route = createRootRoute({
       },
       {
         name: 'twitter:image',
-        content: 'https://www.flavioripa.com/images/hero/hero-background.jpg',
-      },
-      {
-        name: 'twitter:site',
-        content: '@f_oival',
-      },
-      {
-        name: 'twitter:creator',
-        content: '@f_oival',
+        content: `${import.meta.env.VITE_SITE_URL || ''}/images/hero/hero-background.jpg`,
       },
     ],
     links: [
