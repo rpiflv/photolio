@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import PhotoGrid from '../components/PhotoGrid'
 import GalleryInfoPopup from '../components/GalleryInfoPopup'
-import { getPhotos, getPhotosByCategory, getCategories, photoQueryKeys } from '../data/photos'
+import { getPhotos, getPhotosByCategory, getCategories, getCamerasWithCounts, photoQueryKeys } from '../data/photos'
 
 export const Route = createFileRoute('/gallery')({
   component: GalleryPage,
@@ -11,11 +11,35 @@ export const Route = createFileRoute('/gallery')({
 
 function GalleryPage() {
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedCamera, setSelectedCamera] = useState('all')
+  const [hoveredCamera, setHoveredCamera] = useState<string | null>(null)
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleCameraMouseEnter = useCallback((cameraId: string) => {
+    hoverTimerRef.current = setTimeout(() => {
+      setHoveredCamera(cameraId)
+    }, 1000)
+  }, [])
+
+  const handleCameraMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+    setHoveredCamera(null)
+  }, [])
 
   // Fetch categories with caching
   const { data: categories = [] } = useQuery({
     queryKey: photoQueryKeys.categories(),
     queryFn: getCategories,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  })
+
+  // Fetch cameras with caching
+  const { data: cameras = [] } = useQuery({
+    queryKey: photoQueryKeys.cameras(),
+    queryFn: getCamerasWithCounts,
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
 
@@ -26,7 +50,9 @@ function GalleryPage() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
-  const filteredPhotos = photos
+  const filteredPhotos = selectedCamera === 'all'
+    ? photos
+    : photos.filter(photo => photo.metadata?.cameraId === selectedCamera)
 
   return (
     <div className="min-h-screen bg-[#f6f4f2] pt-24 pb-16">
@@ -42,7 +68,7 @@ function GalleryPage() {
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        <div className="flex flex-wrap justify-center gap-3 mb-6">
           {categories.map((category) => (
             <button
               key={category.id}
@@ -55,6 +81,43 @@ function GalleryPage() {
             >
               {category.name} ({category.count})
             </button>
+          ))}
+        </div>
+
+        {/* Camera Filter */}
+        <div className="flex flex-wrap justify-center gap-3 mb-12">
+          {cameras.map((camera) => (
+            <div
+              key={camera.id}
+              className="relative"
+              onMouseEnter={() => camera.imageUrl ? handleCameraMouseEnter(camera.id) : undefined}
+              onMouseLeave={handleCameraMouseLeave}
+            >
+              <button
+                onClick={() => setSelectedCamera(camera.id)}
+                className={`px-5 py-2 border rounded-full text-xs tracking-[0.2em] uppercase transition-colors ${
+                  selectedCamera === camera.id
+                    ? 'bg-neutral-700 text-neutral-100 border-neutral-700'
+                    : 'bg-transparent text-neutral-500 border-neutral-200 hover:border-neutral-400'
+                }`}
+              >
+                {camera.name} ({camera.count})
+              </button>
+              {hoveredCamera === camera.id && camera.imageUrl && (
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 z-50 animate-fade-in">
+                  <div className="bg-[#f6f4f2] border border-neutral-200 rounded-xl shadow-xl p-2.5" style={{ width: '280px' }}>
+                    <img
+                      src={camera.imageUrl}
+                      alt={camera.name}
+                      className="w-full object-contain"
+                    />
+                    <p className="text-[10px] tracking-[0.15em] uppercase text-neutral-400 text-center mt-1.5 font-light">
+                      {camera.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
 

@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate the key to prevent path traversal
-  if (body.key.includes('..') || !body.key.startsWith('gallery/')) {
+  if (body.key.includes('..') || !(body.key.startsWith('gallery/') || body.key.startsWith('cameras/'))) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid S3 key' })
   }
 

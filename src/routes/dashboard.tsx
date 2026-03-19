@@ -1,11 +1,13 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updateCameraImage, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
 import type { Camera, ContactInfo, AboutInfo, Category } from '../lib/supabase'
+import { uploadImageWithPresignedUrl } from '../lib/imageService'
+import { getImageUrl } from '../lib/s3'
 import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings, Plus } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
@@ -19,6 +21,7 @@ function DashboardPage() {
   const [dbCategories, setDbCategories] = useState<Category[]>([])
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCameraName, setNewCameraName] = useState('')
+  const [newCameraImage, setNewCameraImage] = useState<File | null>(null)
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null)
   const [renameCategoryName, setRenameCategoryName] = useState('')
   const [renamingCamera, setRenamingCamera] = useState<string | null>(null)
@@ -610,13 +613,29 @@ function DashboardPage() {
                   placeholder="e.g. Canon EOS R5"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setNewCameraImage(e.target.files?.[0] || null)}
+                  className="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                />
+              </div>
               <button
                 onClick={async () => {
                   if (!newCameraName.trim()) return
                   try {
                     const slug = newCameraName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-                    await addCamera(slug, newCameraName.trim())
+                    let imageS3Key: string | undefined
+                    if (newCameraImage) {
+                      const ext = newCameraImage.name.split('.').pop()?.toLowerCase() || 'jpg'
+                      imageS3Key = `cameras/${slug}.${ext}`
+                      await uploadImageWithPresignedUrl(newCameraImage, imageS3Key)
+                    }
+                    await addCamera(slug, newCameraName.trim(), imageS3Key)
                     setNewCameraName('')
+                    setNewCameraImage(null)
                     await fetchCameras()
                   } catch (error) {
                     alert('Failed to add camera. It may already exist.')
@@ -668,9 +687,37 @@ function DashboardPage() {
                   ) : (
                     <>
                       <div className="flex items-center gap-2">
+                        {cam.image_s3_key && (
+                          <img src={getImageUrl(cam.image_s3_key)} alt={cam.name} className="h-8 w-8 rounded object-cover" />
+                        )}
                         <span className="text-sm text-gray-700">{cam.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
+                        <label
+                          className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                          title="Upload image"
+                        >
+                          <Upload className="h-4 w-4" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              try {
+                                const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+                                const imageS3Key = `cameras/${cam.id}.${ext}`
+                                await uploadImageWithPresignedUrl(file, imageS3Key)
+                                await updateCameraImage(cam.id, imageS3Key)
+                                await fetchCameras()
+                              } catch (error) {
+                                alert('Failed to upload camera image.')
+                              }
+                              e.target.value = ''
+                            }}
+                          />
+                        </label>
                         <button
                           onClick={() => {
                             setRenamingCamera(cam.id)

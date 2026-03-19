@@ -64,6 +64,7 @@ export interface OrderItem {
 export interface Camera {
   id: string
   name: string
+  image_s3_key: string | null
   user_id: string
   created_at: string
 }

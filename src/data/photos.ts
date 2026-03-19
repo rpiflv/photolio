@@ -189,6 +189,29 @@ export async function getCategories() {
   ]
 }
 
+// Get cameras with photo counts (for gallery filter)
+export async function getCamerasWithCounts() {
+  const { data: cameras } = await supabase.from('cameras').select('*').order('name', { ascending: true })
+  const { data: photos } = await supabase.from('photos').select('camera')
+
+  const counts: Record<string, number> = {}
+  photos?.forEach(photo => {
+    if (photo.camera) {
+      counts[photo.camera] = (counts[photo.camera] || 0) + 1
+    }
+  })
+
+  return [
+    { id: 'all', name: 'All Cameras', count: photos?.length || 0, imageUrl: undefined as string | undefined },
+    ...(cameras?.filter(cam => cam.id !== 'all').map(cam => ({
+      id: cam.id,
+      name: cam.name,
+      count: counts[cam.id] || 0,
+      imageUrl: cam.image_s3_key ? getImageUrl(cam.image_s3_key) : undefined,
+    })) || [])
+  ]
+}
+
 // Get raw categories (for management)
 export async function getRawCategories(): Promise<DBCategory[]> {
   const { data, error } = await supabase
@@ -446,15 +469,32 @@ export async function getCameras(): Promise<DBCamera[]> {
 }
 
 // Add a new camera to the cameras table (slug-based ID, like categories)
-export async function addCamera(id: string, name: string): Promise<DBCamera | null> {
+export async function addCamera(id: string, name: string, imageS3Key?: string): Promise<DBCamera | null> {
   const { data, error } = await supabase
     .from('cameras')
-    .insert({ id, name: name.trim() })
+    .insert({ id, name: name.trim(), image_s3_key: imageS3Key || null })
     .select()
     .single()
 
   if (error) {
     console.error('Error adding camera:', error)
+    throw error
+  }
+
+  return data
+}
+
+// Update a camera's image
+export async function updateCameraImage(id: string, imageS3Key: string | null): Promise<DBCamera | null> {
+  const { data, error } = await supabase
+    .from('cameras')
+    .update({ image_s3_key: imageS3Key })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating camera image:', error)
     throw error
   }
 
