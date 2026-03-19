@@ -66,7 +66,7 @@ export async function updateHomeInfo(
 ): Promise<AboutInfo | null> {
   const { data, error } = await supabase
     .from('home_info')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(updates)
     .eq('id', id)
     .select()
     .single()
