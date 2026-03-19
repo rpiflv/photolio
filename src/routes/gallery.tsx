@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import PhotoGrid from '../components/PhotoGrid'
 import GalleryInfoPopup from '../components/GalleryInfoPopup'
-import { getPhotos, getPhotosByCategory, getCategories, getCamerasWithCounts, photoQueryKeys } from '../data/photos'
+import { getPhotos, getCategories, getCamerasWithCounts, photoQueryKeys } from '../data/photos'
 
 export const Route = createFileRoute('/gallery')({
   component: GalleryPage,
@@ -60,16 +60,52 @@ function GalleryPage() {
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
 
-  // Fetch photos based on selected category with caching
-  const { data: photos = [] } = useQuery({
-    queryKey: photoQueryKeys.list(selectedCategory),
-    queryFn: () => selectedCategory === 'all' ? getPhotos() : getPhotosByCategory(selectedCategory),
+  // Always fetch all photos, filter client-side for cross-updated counts
+  const { data: allPhotos = [] } = useQuery({
+    queryKey: photoQueryKeys.list('all'),
+    queryFn: getPhotos,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
-  const filteredPhotos = selectedCamera === 'all'
-    ? photos
-    : photos.filter(photo => photo.metadata?.cameraId === selectedCamera)
+  // Photos filtered by category only (for camera counts)
+  const photosByCategory = useMemo(() =>
+    selectedCategory === 'all' ? allPhotos : allPhotos.filter(p => p.category === selectedCategory),
+    [allPhotos, selectedCategory]
+  )
+
+  // Photos filtered by camera only (for category counts)
+  const photosByCamera = useMemo(() =>
+    selectedCamera === 'all' ? allPhotos : allPhotos.filter(p => p.metadata?.cameraId === selectedCamera),
+    [allPhotos, selectedCamera]
+  )
+
+  // Final filtered photos (both filters applied)
+  const filteredPhotos = useMemo(() =>
+    photosByCategory.filter(p => selectedCamera === 'all' || p.metadata?.cameraId === selectedCamera),
+    [photosByCategory, selectedCamera]
+  )
+
+  // Cross-updated category counts based on selected camera
+  const categoriesWithCounts = useMemo(() =>
+    categories.map(cat => ({
+      ...cat,
+      count: cat.id === 'all'
+        ? photosByCamera.length
+        : photosByCamera.filter(p => p.category === cat.id).length,
+    })),
+    [categories, photosByCamera]
+  )
+
+  // Cross-updated camera counts based on selected category
+  const camerasWithCounts = useMemo(() =>
+    cameras.map(cam => ({
+      ...cam,
+      count: cam.id === 'all'
+        ? photosByCategory.length
+        : photosByCategory.filter(p => p.metadata?.cameraId === cam.id).length,
+    })),
+    [cameras, photosByCategory]
+  )
 
   return (
     <div className="min-h-screen bg-[#f6f4f2] pt-24 pb-16">
@@ -86,7 +122,7 @@ function GalleryPage() {
 
         {/* Category Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-6">
-          {categories.map((category) => (
+          {categoriesWithCounts.map((category) => (
             <button
               key={category.id}
               onClick={() => setSelectedCategory(category.id)}
@@ -103,7 +139,7 @@ function GalleryPage() {
 
         {/* Camera Filter */}
         <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {cameras.map((camera) => (
+          {camerasWithCounts.map((camera) => (
             <div
               key={camera.id}
               className="relative"

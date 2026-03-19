@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Mail, Phone, MapPin, Loader2 } from 'lucide-react'
+import { Mail, Phone, MapPin, Loader2, Send } from 'lucide-react'
 import { FaInstagram } from 'react-icons/fa'
 import { getContactInfo } from '../data/contactInfo'
 import type { ContactInfo } from '../lib/supabase'
@@ -10,6 +10,10 @@ export const Route = createFileRoute('/contact')({ component: ContactPage })
 function ContactPage() {
   const [contact, setContact] = useState<ContactInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [form, setForm] = useState({ name: '', email: '', message: '' })
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -24,6 +28,29 @@ function ContactPage() {
     }
     fetchContact()
   }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSending(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.statusMessage || 'Failed to send message')
+      }
+      setSent(true)
+      setForm({ name: '', email: '', message: '' })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong')
+    } finally {
+      setSending(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -102,6 +129,82 @@ function ContactPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Contact Form */}
+        <div className="mt-16 max-w-xl mx-auto">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Send a Message</h2>
+
+          {sent ? (
+            <div className="text-center py-8">
+              <p className="text-lg text-neutral-700">Thank you! Your message has been sent.</p>
+              <button
+                onClick={() => setSent(false)}
+                className="mt-4 text-sm text-neutral-500 underline hover:text-neutral-700"
+              >
+                Send another message
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  required
+                  maxLength={200}
+                  value={form.name}
+                  onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  maxLength={200}
+                  value={form.email}
+                  onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                <textarea
+                  id="message"
+                  required
+                  maxLength={5000}
+                  rows={5}
+                  value={form.message}
+                  onChange={(e) => setForm(f => ({ ...f, message: e.target.value }))}
+                  className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-neutral-400 bg-white resize-none"
+                  placeholder="Your message..."
+                />
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={sending}
+                className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-neutral-900 text-neutral-100 rounded-lg text-sm tracking-wide hover:bg-neutral-800 transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {sending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {sending ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
