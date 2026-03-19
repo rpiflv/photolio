@@ -313,13 +313,14 @@ function DashboardPage() {
 
   const totalLikes = photos.reduce((sum, photo) => sum + (photo.likesCount || 0), 0)
 
-  // Derive unique cameras from photos
-  const photoCameras = Array.from(new Set(photos.map(p => p.metadata?.camera).filter(Boolean))).sort() as string[]
+  // Derive unique cameras from photos (use cameraId for filtering)
+  const photoCameras = Array.from(new Set(photos.map(p => p.metadata?.cameraId).filter(Boolean))).sort() as string[]
+  const cameraNameMap = Object.fromEntries(cameras.map(c => [c.id, c.name]))
 
   // Filter photos by category and/or camera
   const filteredPhotos = photos.filter(photo => {
     const matchesCategory = !filterCategory || photo.category === filterCategory
-    const matchesCamera = !filterCamera || photo.metadata?.camera === filterCamera
+    const matchesCamera = !filterCamera || photo.metadata?.cameraId === filterCamera
     return matchesCategory && matchesCamera
   })
 
@@ -613,7 +614,8 @@ function DashboardPage() {
                 onClick={async () => {
                   if (!newCameraName.trim()) return
                   try {
-                    await addCamera(newCameraName.trim())
+                    const slug = newCameraName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+                    await addCamera(slug, newCameraName.trim())
                     setNewCameraName('')
                     await fetchCameras()
                   } catch (error) {
@@ -647,6 +649,7 @@ function DashboardPage() {
                             await renameCamera(cam.id, renameCameraName)
                             setRenamingCamera(null)
                             await fetchCameras()
+                            await fetchPhotos()
                           } catch (error) {
                             alert('Failed to rename camera.')
                           }
@@ -730,7 +733,7 @@ function DashboardPage() {
                 >
                   <option value="">All Cameras</option>
                   {photoCameras.map(cam => (
-                    <option key={cam} value={cam}>{cam}</option>
+                    <option key={cam} value={cam}>{cameraNameMap[cam] || cam}</option>
                   ))}
                 </select>
                 {(filterCategory || filterCamera) && (
@@ -820,7 +823,7 @@ function DashboardPage() {
                               setEditForm({
                                 title: photo.title,
                                 category: photo.category,
-                                camera: photo.metadata?.camera || '',
+                                camera: photo.metadata?.cameraId || '',
                               })
                             }}
                             className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
@@ -1153,7 +1156,7 @@ function DashboardPage() {
                     >
                       <option value="">Select a camera</option>
                       {cameras.map((cam) => (
-                        <option key={cam.id} value={cam.name}>{cam.name}</option>
+                        <option key={cam.id} value={cam.id}>{cam.name}</option>
                       ))}
                     </select>
                   </div>
@@ -1265,7 +1268,7 @@ function DashboardPage() {
                     >
                       <option value="">No camera</option>
                       {cameras.map((cam) => (
-                        <option key={cam.id} value={cam.name}>{cam.name}</option>
+                        <option key={cam.id} value={cam.id}>{cam.name}</option>
                       ))}
                     </select>
                   </div>

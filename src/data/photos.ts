@@ -36,6 +36,7 @@ export interface Photo {
   metadata?: {
     location?: string
     camera?: string
+    cameraId?: string
     lens?: string
     settings?: {
       aperture?: string
@@ -47,7 +48,10 @@ export interface Photo {
 }
 
 // Convert database photo to Photo interface
-function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
+// cameraMap resolves camera slug (stored in DB) to display name
+function dbPhotoToPhoto(dbPhoto: DBPhoto, cameraMap?: Record<string, string>): Photo {
+  const cameraSlug = dbPhoto.camera || undefined
+  const cameraDisplayName = cameraSlug && cameraMap ? (cameraMap[cameraSlug] || cameraSlug) : cameraSlug
   return {
     id: dbPhoto.id,
     title: dbPhoto.title,
@@ -65,26 +69,37 @@ function dbPhotoToPhoto(dbPhoto: DBPhoto): Photo {
     dimensions: dbPhoto.dimensions || undefined,
     metadata: {
       location: dbPhoto.location || undefined,
-      camera: dbPhoto.camera || undefined,
+      camera: cameraDisplayName,
+      cameraId: cameraSlug,
       lens: dbPhoto.lens || undefined,
       settings: dbPhoto.settings || undefined,
     }
   }
 }
 
+// Fetch camera slug -> name lookup map
+async function getCameraMap(): Promise<Record<string, string>> {
+  const cameras = await getCameras()
+  const map: Record<string, string> = {}
+  for (const cam of cameras) {
+    map[cam.id] = cam.name
+  }
+  return map
+}
+
 // Fetch all photos from Supabase
 export async function getPhotos(): Promise<Photo[]> {
-  const { data, error } = await supabase
-    .from('photos')
-    .select('*')
-    .order('date', { ascending: false })
+  const [{ data, error }, cameraMap] = await Promise.all([
+    supabase.from('photos').select('*').order('date', { ascending: false }),
+    getCameraMap(),
+  ])
 
   if (error) {
     console.error('Error fetching photos:', error)
     return []
   }
 
-  const photos = data.map(dbPhotoToPhoto)
+  const photos = data.map(p => dbPhotoToPhoto(p, cameraMap))
   
   // Sort by category: other, street, then alphabetically
   const categoryOrder: Record<string, number> = {
@@ -126,34 +141,32 @@ export async function getPhotosByCategory(category: string): Promise<Photo[]> {
     return getPhotos()
   }
 
-  const { data, error } = await supabase
-    .from('photos')
-    .select('*')
-    .eq('category', category)
-    .order('date', { ascending: false })
+  const [{ data, error }, cameraMap] = await Promise.all([
+    supabase.from('photos').select('*').eq('category', category).order('date', { ascending: false }),
+    getCameraMap(),
+  ])
 
   if (error) {
     console.error('Error fetching photos by category:', error)
     return []
   }
 
-  return data.map(dbPhotoToPhoto)
+  return data.map(p => dbPhotoToPhoto(p, cameraMap))
 }
 
 // Get photo by ID
 export async function getPhotoById(id: string): Promise<Photo | null> {
-  const { data, error } = await supabase
-    .from('photos')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const [{ data, error }, cameraMap] = await Promise.all([
+    supabase.from('photos').select('*').eq('id', id).single(),
+    getCameraMap(),
+  ])
 
   if (error) {
     console.error('Error fetching photo:', error)
     return null
   }
 
-  return dbPhotoToPhoto(data)
+  return dbPhotoToPhoto(data, cameraMap)
 }
 
 // Get categories with counts
@@ -432,11 +445,11 @@ export async function getCameras(): Promise<DBCamera[]> {
   return data
 }
 
-// Add a new camera to the cameras table
-export async function addCamera(name: string): Promise<DBCamera | null> {
+// Add a new camera to the cameras table (slug-based ID, like categories)
+export async function addCamera(id: string, name: string): Promise<DBCamera | null> {
   const { data, error } = await supabase
     .from('cameras')
-    .insert({ name: name.trim() })
+    .insert({ id, name: name.trim() })
     .select()
     .single()
 
@@ -448,17 +461,21 @@ export async function addCamera(name: string): Promise<DBCamera | null> {
   return data
 }
 
-// Rename a camera
-export async function renameCamera(id: string, newName: string): Promise<void> {
-  const { error } = await supabase
+// Rename a camera (updates display name only, slug/id stays the same — like categories)
+export async function renameCamera(id: string, newName: string): Promise<DBCamera | null> {
+  const { data, error } = await supabase
     .from('cameras')
     .update({ name: newName.trim() })
     .eq('id', id)
+    .select()
+    .single()
 
   if (error) {
     console.error('Error renaming camera:', error)
     throw error
   }
+
+  return data
 }
 
 // Delete a camera
