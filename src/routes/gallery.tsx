@@ -14,6 +14,7 @@ function GalleryPage() {
   const [selectedCamera, setSelectedCamera] = useState('all')
   const [hoveredCamera, setHoveredCamera] = useState<string | null>(null)
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressTriggeredRef = useRef(false)
 
   const handleCameraMouseEnter = useCallback((cameraId: string) => {
     hoverTimerRef.current = setTimeout(() => {
@@ -22,6 +23,22 @@ function GalleryPage() {
   }, [])
 
   const handleCameraMouseLeave = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+    setHoveredCamera(null)
+  }, [])
+
+  const handleTouchStart = useCallback((cameraId: string) => {
+    longPressTriggeredRef.current = false
+    hoverTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true
+      setHoveredCamera(cameraId)
+    }, 1000)
+  }, [])
+
+  const handleTouchEnd = useCallback(() => {
     if (hoverTimerRef.current) {
       clearTimeout(hoverTimerRef.current)
       hoverTimerRef.current = null
@@ -92,9 +109,18 @@ function GalleryPage() {
               className="relative"
               onMouseEnter={() => camera.imageUrl ? handleCameraMouseEnter(camera.id) : undefined}
               onMouseLeave={handleCameraMouseLeave}
+              onTouchStart={() => camera.imageUrl ? handleTouchStart(camera.id) : undefined}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
             >
               <button
-                onClick={() => setSelectedCamera(camera.id)}
+                onClick={() => {
+                  if (longPressTriggeredRef.current) {
+                    longPressTriggeredRef.current = false
+                    return
+                  }
+                  setSelectedCamera(camera.id)
+                }}
                 className={`px-5 py-2 border rounded-full text-xs tracking-[0.2em] uppercase transition-colors ${
                   selectedCamera === camera.id
                     ? 'bg-neutral-700 text-neutral-100 border-neutral-700'
