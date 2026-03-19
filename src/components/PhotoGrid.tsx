@@ -91,6 +91,17 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
               }`}
             />
             
+            {/* Photo Info Overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <h3 className="text-white text-sm font-medium tracking-wide">{photo.title}</h3>
+              <p className="text-white/70 text-xs tracking-wider uppercase mt-1">
+                {photo.category}
+              </p>
+              {photo.metadata?.camera && (
+                <p className="text-white/50 text-[10px] tracking-wide mt-0.5">{photo.metadata.camera}</p>
+              )}
+            </div>
+
             {/* Favorite Button - Changed to Star */}
             {user && (
               <button

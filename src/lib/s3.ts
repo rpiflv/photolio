@@ -2,15 +2,17 @@
 // Images are served publicly via CloudFront or direct S3 bucket URL.
 
 const cloudFrontDomain = import.meta.env.VITE_CLOUDFRONT_DOMAIN as string | undefined
+const s3PublicUrl = import.meta.env.VITE_S3_PUBLIC_URL as string | undefined
 
 // Helper function to get image URL directly from S3 or CloudFront
 export const getImageUrl = (key: string): string => {
   if (cloudFrontDomain) {
     return `https://${cloudFrontDomain}/${key}`
   }
-  // Fallback: fetch bucket info from server at build time won't work,
-  // so CloudFront is required when AWS creds are server-only.
-  // If no CloudFront, we use a relative API path that the server can proxy.
+  if (s3PublicUrl) {
+    return `${s3PublicUrl.replace(/\/$/, '')}/${key}`
+  }
+  // Last resort: proxy through server API (requires a handler for /api/image/*)
   return `/api/image/${encodeURIComponent(key)}`
 }
 
