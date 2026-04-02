@@ -58,65 +58,72 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
+      <div className="columns-1 md:columns-2 gap-10 md:gap-14 [column-fill:_balance]">
         {photos.map((photo) => (
           <div
             key={photo.id}
-            className="group relative aspect-[4/5] overflow-hidden transition-opacity duration-700 cursor-pointer bg-[#efedea]"
-            onClick={() => handlePhotoOpen(photo)}
+            className="group relative mb-10 break-inside-avoid md:mb-14"
           >
-            {/* Loading Spinner */}
-            {!loadedImages.has(photo.id) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#efedea]">
-                <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+            <div
+              className="relative overflow-hidden transition-opacity duration-700 cursor-pointer bg-[#efedea]"
+              onClick={() => handlePhotoOpen(photo)}
+              style={photo.dimensions
+                ? { aspectRatio: `${photo.dimensions.width} / ${photo.dimensions.height}` }
+                : undefined}
+            >
+              {/* Loading Spinner */}
+              {!loadedImages.has(photo.id) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#efedea]">
+                  <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                </div>
+              )}
+
+              <img
+                src={photo.src}
+                srcSet={photo.srcset}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                alt={photo.alt}
+                loading="lazy"
+                onLoad={() => handleImageLoad(photo.id)}
+                onError={(e) => {
+                  // Fallback to main src if thumbnail fails
+                  const img = e.target as HTMLImageElement
+                  if (img.src !== photo.src) {
+                    img.src = photo.src
+                  }
+                }}
+                className={`block w-full h-auto transition-opacity duration-700 group-hover:opacity-90 ${
+                  loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+
+              {/* Photo Info Overlay */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <h3 className="text-white text-sm font-medium tracking-wide">{photo.title}</h3>
+                <p className="text-white/70 text-xs tracking-wider uppercase mt-1">
+                  {photo.category}
+                </p>
+                {photo.metadata?.camera && (
+                  <p className="text-white/50 text-[10px] tracking-wide mt-0.5">{photo.metadata.camera}</p>
+                )}
               </div>
-            )}
-            
-            <img
-              src={photo.src}
-              srcSet={photo.srcset}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              alt={photo.alt}
-              loading="lazy"
-              onLoad={() => handleImageLoad(photo.id)}
-              onError={(e) => {
-                // Fallback to main src if thumbnail fails
-                const img = e.target as HTMLImageElement
-                if (img.src !== photo.src) {
-                  img.src = photo.src
-                }
-              }}
-              className={`w-full h-full object-cover transition-opacity duration-700 group-hover:opacity-90 ${
-                loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-            
-            {/* Photo Info Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <h3 className="text-white text-sm font-medium tracking-wide">{photo.title}</h3>
-              <p className="text-white/70 text-xs tracking-wider uppercase mt-1">
-                {photo.category}
-              </p>
-              {photo.metadata?.camera && (
-                <p className="text-white/50 text-[10px] tracking-wide mt-0.5">{photo.metadata.camera}</p>
+
+              {/* Favorite Button - Changed to Star */}
+              {user && (
+                <button
+                  onClick={(e) => handleFavoriteClick(e, photo.id)}
+                  className="absolute top-4 right-4 p-2 rounded-full transition-all z-10 bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100"
+                >
+                  <Star
+                    className={`h-5 w-5 ${
+                      isFavorited(photo.id)
+                        ? 'fill-neutral-700 text-neutral-700'
+                        : 'text-neutral-600'
+                    }`}
+                  />
+                </button>
               )}
             </div>
-
-            {/* Favorite Button - Changed to Star */}
-            {user && (
-              <button
-                onClick={(e) => handleFavoriteClick(e, photo.id)}
-                className="absolute top-4 right-4 p-2 rounded-full transition-all z-10 bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100"
-              >
-                <Star
-                  className={`h-5 w-5 ${
-                    isFavorited(photo.id)
-                      ? 'fill-neutral-700 text-neutral-700'
-                      : 'text-neutral-600'
-                  }`}
-                />
-              </button>
-            )}
           </div>
         ))}
       </div>
