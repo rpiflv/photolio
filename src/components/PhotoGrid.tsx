@@ -65,7 +65,7 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
             className="group relative mb-10 break-inside-avoid md:mb-14"
           >
             <div
-              className="relative overflow-hidden transition-opacity duration-700 cursor-pointer bg-[#efedea]"
+              className="relative overflow-hidden cursor-pointer bg-[#efedea]  transition-all duration-700 hover:-translate-y-1 shadow-[0_10px_22px_rgba(0,0,0,0.54)]"
               onClick={() => handlePhotoOpen(photo)}
               style={photo.dimensions
                 ? { aspectRatio: `${photo.dimensions.width} / ${photo.dimensions.height}` }
