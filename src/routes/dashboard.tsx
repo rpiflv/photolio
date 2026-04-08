@@ -8,7 +8,7 @@ import type { Photo } from '../data/photos'
 import type { Camera, ContactInfo, AboutInfo, Category } from '../lib/supabase'
 import { uploadImageWithPresignedUrl } from '../lib/imageService'
 import { getImageUrl } from '../lib/s3'
-import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings, Plus } from 'lucide-react'
+import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings, Plus, Share2, ArrowLeft } from 'lucide-react'
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardPage,
@@ -39,6 +39,15 @@ function DashboardPage() {
     camera: '',
     lens: '',
   })
+  const [uploadStep, setUploadStep] = useState<1 | 2>(1)
+  const [socialAccounts, setSocialAccounts] = useState<{ x: { id: string; label: string }[]; instagram: { id: string; label: string }[] }>({ x: [], instagram: [] })
+  const [socialPostForm, setSocialPostForm] = useState({
+    enabled: false,
+    xAccountIds: [] as string[],
+    igAccountIds: [] as string[],
+    caption: '',
+  })
+  const [socialPostResults, setSocialPostResults] = useState<Record<string, { success: boolean; error?: string; postUrl?: string }> | null>(null)
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
   const [editForm, setEditForm] = useState({ title: '', category: '', camera: '' })
   const [saving, setSaving] = useState(false)
@@ -115,6 +124,18 @@ function DashboardPage() {
     }
   }
 
+  const fetchSocialAccounts = async () => {
+    try {
+      const response = await fetch('/api/social-accounts')
+      if (response.ok) {
+        const data = await response.json() as { x: { id: string; label: string }[]; instagram: { id: string; label: string }[] }
+        setSocialAccounts(data)
+      }
+    } catch (error) {
+      console.error('Error fetching social accounts:', error)
+    }
+  }
+
   useEffect(() => {
     if (!adminLoading && isAdmin) {
       fetchPhotos()
@@ -122,6 +143,7 @@ function DashboardPage() {
       fetchCategories()
       fetchContactInfo()
       fetchAboutInfo()
+      fetchSocialAccounts()
     }
   }, [isAdmin, adminLoading])
 
@@ -149,7 +171,7 @@ function DashboardPage() {
       
       console.log('Starting upload for:', selectedFile.name)
 
-      await uploadPhoto(selectedFile, {
+      const uploadedPhoto = await uploadPhoto(selectedFile, {
         id: photoId,
         title: uploadForm.title,
         description: uploadForm.description || undefined,
@@ -160,6 +182,40 @@ function DashboardPage() {
       })
 
       console.log('Upload successful, refreshing photos...')
+
+      // Social media posting
+      let socialResults: Record<string, { success: boolean; error?: string; postUrl?: string }> | null = null
+      if (socialPostForm.enabled && (socialPostForm.xAccountIds.length > 0 || socialPostForm.igAccountIds.length > 0)) {
+        try {
+          const s3Key = uploadedPhoto?.s3Key || `gallery/${uploadForm.category}/${photoId}.${selectedFile.name.split('.').pop()}`
+          const imageUrl = getImageUrl(s3Key)
+          const platforms: { platform: string; accountId: string }[] = []
+          for (const accountId of socialPostForm.xAccountIds) {
+            platforms.push({ platform: 'x', accountId })
+          }
+          for (const accountId of socialPostForm.igAccountIds) {
+            platforms.push({ platform: 'instagram', accountId })
+          }
+
+          const response = await fetch('/api/social-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              imageUrl,
+              caption: socialPostForm.caption,
+              platforms,
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json() as { results: Record<string, { success: boolean; error?: string; postUrl?: string }> }
+            socialResults = data.results
+          }
+        } catch (socialError) {
+          console.error('Social media posting error:', socialError)
+        }
+      }
+
       // Refresh photos list
       await fetchPhotos()
       
@@ -167,6 +223,7 @@ function DashboardPage() {
       setShowUploadModal(false)
       setSelectedFile(null)
       setUploadError(null)
+      setUploadStep(1)
       setUploadForm({
         title: '',
         description: '',
@@ -175,11 +232,17 @@ function DashboardPage() {
         camera: '',
         lens: '',
       })
+      setSocialPostForm({ enabled: false, xAccountIds: [], igAccountIds: [], caption: '' })
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
       
-      alert('Photo uploaded successfully!')
+      // Show results
+      if (socialResults) {
+        setSocialPostResults(socialResults)
+      } else {
+        alert('Photo uploaded successfully!')
+      }
     } catch (error) {
       console.error('Error uploading photo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to upload photo. Please try again.'
@@ -1093,11 +1156,25 @@ function DashboardPage() {
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">Upload New Photo</h2>
+                  <div className="flex items-center space-x-3">
+                    {uploadStep === 2 && (
+                      <button
+                        onClick={() => setUploadStep(1)}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <ArrowLeft className="h-5 w-5" />
+                      </button>
+                    )}
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {uploadStep === 1 ? 'Upload New Photo' : 'Social Media Posting'}
+                    </h2>
+                  </div>
                   <button
                     onClick={() => {
                       setShowUploadModal(false)
                       setSelectedFile(null)
+                      setUploadStep(1)
+                      setSocialPostForm({ enabled: false, xAccountIds: [], igAccountIds: [], caption: '' })
                     }}
                     className="text-gray-400 hover:text-gray-600"
                   >
@@ -1105,6 +1182,18 @@ function DashboardPage() {
                   </button>
                 </div>
 
+                {/* Step indicator */}
+                <div className="flex items-center mb-6">
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${uploadStep === 1 ? 'bg-blue-600 text-white' : 'bg-green-500 text-white'}`}>
+                    {uploadStep === 1 ? '1' : '✓'}
+                  </div>
+                  <div className={`flex-1 h-0.5 mx-2 ${uploadStep === 2 ? 'bg-blue-600' : 'bg-gray-200'}`} />
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${uploadStep === 2 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'}`}>
+                    2
+                  </div>
+                </div>
+
+                {uploadStep === 1 && (
                 <div className="space-y-4">
                   {/* Error Message */}
                   {uploadError && (
@@ -1225,19 +1314,187 @@ function DashboardPage() {
                   {/* Action Buttons */}
                   <div className="flex space-x-3 pt-4">
                     <button
+                      onClick={() => {
+                        if (!selectedFile || !uploadForm.title) {
+                          setUploadError('Please select a file and provide a title')
+                          return
+                        }
+                        setUploadError(null)
+                        setSocialPostForm(prev => ({
+                          ...prev,
+                          caption: prev.caption || uploadForm.title + (uploadForm.description ? '\n\n' + uploadForm.description : ''),
+                        }))
+                        setUploadStep(2)
+                      }}
+                      disabled={!selectedFile || !uploadForm.title}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <span>Continue</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUploadModal(false)
+                        setSelectedFile(null)
+                        setUploadStep(1)
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+                )}
+
+                {uploadStep === 2 && (
+                <div className="space-y-4">
+                  {/* Error Message */}
+                  {uploadError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                      <p className="text-sm font-medium">Upload Error:</p>
+                      <p className="text-sm">{uploadError}</p>
+                    </div>
+                  )}
+
+                  {/* Summary of photo being uploaded */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <p className="text-sm text-gray-600">Uploading: <span className="font-medium text-gray-900">{uploadForm.title}</span></p>
+                    {selectedFile && (
+                      <p className="text-xs text-gray-500 mt-1">{selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</p>
+                    )}
+                  </div>
+
+                  {/* Social media toggle */}
+                  <div className="border border-gray-200 rounded-lg p-4">
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        <Share2 className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Post to social media</p>
+                          <p className="text-xs text-gray-500">Share this photo on X and/or Instagram</p>
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => setSocialPostForm(prev => ({ ...prev, enabled: !prev.enabled, xAccountIds: !prev.enabled ? prev.xAccountIds : [], igAccountIds: !prev.enabled ? prev.igAccountIds : [] }))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${socialPostForm.enabled ? 'bg-blue-600' : 'bg-gray-300'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${socialPostForm.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                      </div>
+                    </label>
+                  </div>
+
+                  {socialPostForm.enabled && (socialAccounts.x.length > 0 || socialAccounts.instagram.length > 0) && (
+                    <>
+                      {/* X Account selection */}
+                      {socialAccounts.x.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                            </svg>
+                            <p className="text-sm font-medium text-gray-700">X (Twitter) accounts</p>
+                          </div>
+                          <div className="space-y-1.5 pl-6">
+                            {socialAccounts.x.map((account) => (
+                              <label key={account.id} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={socialPostForm.xAccountIds.includes(account.id)}
+                                  onChange={(e) => {
+                                    setSocialPostForm(prev => ({
+                                      ...prev,
+                                      xAccountIds: e.target.checked
+                                        ? [...prev.xAccountIds, account.id]
+                                        : prev.xAccountIds.filter(id => id !== account.id),
+                                    }))
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{account.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Instagram Account selection */}
+                      {socialAccounts.instagram.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
+                            </svg>
+                            <p className="text-sm font-medium text-gray-700">Instagram accounts</p>
+                          </div>
+                          <div className="space-y-1.5 pl-6">
+                            {socialAccounts.instagram.map((account) => (
+                              <label key={account.id} className="flex items-center space-x-3 cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={socialPostForm.igAccountIds.includes(account.id)}
+                                  onChange={(e) => {
+                                    setSocialPostForm(prev => ({
+                                      ...prev,
+                                      igAccountIds: e.target.checked
+                                        ? [...prev.igAccountIds, account.id]
+                                        : prev.igAccountIds.filter(id => id !== account.id),
+                                    }))
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm text-gray-700">{account.label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Caption */}
+                      {(socialPostForm.xAccountIds.length > 0 || socialPostForm.igAccountIds.length > 0) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Caption
+                          </label>
+                          <textarea
+                            value={socialPostForm.caption}
+                            onChange={(e) => setSocialPostForm(prev => ({ ...prev, caption: e.target.value }))}
+                            rows={4}
+                            maxLength={2200}
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Write your post caption..."
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            {socialPostForm.caption.length}/2200 characters
+                            {socialPostForm.xAccountIds.length > 0 && socialPostForm.caption.length > 280 && (
+                              <span className="text-amber-600 ml-2">(X posts are limited to 280 characters)</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {socialPostForm.enabled && socialAccounts.x.length === 0 && socialAccounts.instagram.length === 0 && (
+                    <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
+                      <p className="text-sm">No social media accounts configured. Add <code>TWITTER_ACCOUNTS</code> or <code>INSTAGRAM_ACCOUNTS</code> to your environment variables.</p>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3 pt-4">
+                    <button
                       onClick={handleUpload}
-                      disabled={!selectedFile || !uploadForm.title || uploading}
+                      disabled={uploading || (socialPostForm.enabled && (socialPostForm.xAccountIds.length > 0 || socialPostForm.igAccountIds.length > 0) && !socialPostForm.caption.trim())}
                       className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
                     >
                       {uploading ? (
                         <>
                           <Loader2 className="h-5 w-5 animate-spin" />
-                          <span>Uploading...</span>
+                          <span>{socialPostForm.enabled && (socialPostForm.xAccountIds.length > 0 || socialPostForm.igAccountIds.length > 0) ? 'Uploading & Posting...' : 'Uploading...'}</span>
                         </>
                       ) : (
                         <>
                           <Upload className="h-5 w-5" />
-                          <span>Upload Photo</span>
+                          <span>{socialPostForm.enabled && (socialPostForm.xAccountIds.length > 0 || socialPostForm.igAccountIds.length > 0) ? 'Upload & Post' : 'Upload Photo'}</span>
                         </>
                       )}
                     </button>
@@ -1245,6 +1502,8 @@ function DashboardPage() {
                       onClick={() => {
                         setShowUploadModal(false)
                         setSelectedFile(null)
+                        setUploadStep(1)
+                        setSocialPostForm({ enabled: false, xAccountIds: [], igAccountIds: [], caption: '' })
                       }}
                       disabled={uploading}
                       className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1252,6 +1511,69 @@ function DashboardPage() {
                       Cancel
                     </button>
                   </div>
+                </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Social Post Results Modal */}
+        {socialPostResults && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-gray-900">Upload Complete</h2>
+                  <button
+                    onClick={() => setSocialPostResults(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 text-green-600">
+                    <span className="text-lg">✓</span>
+                    <span className="text-sm font-medium">Photo uploaded successfully</span>
+                  </div>
+
+                  {Object.entries(socialPostResults).map(([key, result]) => {
+                    const [platform, accountId] = key.split(':')
+                    const platformLabel = platform === 'x' ? 'X' : 'Instagram'
+                    const allAccounts = platform === 'x' ? socialAccounts.x : socialAccounts.instagram
+                    const accountLabel = allAccounts.find(a => a.id === accountId)?.label || accountId
+                    const displayName = `${platformLabel} (${accountLabel})`
+
+                    return (
+                      <div key={key} className={`flex items-start space-x-2 ${result.success ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className="text-lg">{result.success ? '✓' : '✗'}</span>
+                        <div>
+                          <span className="text-sm font-medium">
+                            {result.success ? `Posted to ${displayName}` : `${displayName} posting failed`}
+                          </span>
+                          {result.postUrl && (
+                            <a href={result.postUrl} target="_blank" rel="noopener noreferrer" className="block text-xs text-blue-600 hover:underline mt-0.5">
+                              View post
+                            </a>
+                          )}
+                          {result.error && (
+                            <p className="text-xs text-red-500 mt-0.5">{result.error}</p>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="mt-6">
+                  <button
+                    onClick={() => setSocialPostResults(null)}
+                    className="w-full bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
             </div>
