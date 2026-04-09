@@ -7,12 +7,15 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
 
   try {
     // Step 1: Download the image to upload as media
+    console.log('[social-post] Fetching image for X upload:', imageUrl)
     const imageResponse = await fetch(imageUrl)
     if (!imageResponse.ok) {
-      return { success: false, error: 'Failed to fetch image for Twitter upload' }
+      console.log('[social-post] Failed to fetch image:', imageResponse.status, imageResponse.statusText)
+      return { success: false, error: `Failed to fetch image for Twitter upload: ${imageResponse.status} ${imageResponse.statusText}` }
     }
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer())
     const contentType = imageResponse.headers.get('content-type') || 'image/jpeg'
+    console.log('[social-post] Image fetched. Size:', imageBuffer.length, 'Type:', contentType)
 
     // Step 2: Upload media via Twitter v1.1 media upload endpoint
     // Using OAuth 1.0a HMAC-SHA1
@@ -74,13 +77,16 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
       body: initFormData.toString(),
     })
 
+    console.log('[social-post] X media INIT response status:', initResponse.status)
     if (!initResponse.ok) {
       const errorText = await initResponse.text()
+      console.log('[social-post] X media INIT error:', errorText)
       return { success: false, error: `Twitter media INIT failed: ${errorText}` }
     }
 
     const initData = await initResponse.json() as { media_id_string: string }
     const mediaId = initData.media_id_string
+    console.log('[social-post] X media INIT success, mediaId:', mediaId)
 
     // Upload media (APPEND) - send as multipart form data
     const boundary = '----FormBoundary' + randomBytes(16).toString('hex')
@@ -103,8 +109,10 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
       body: appendParts,
     })
 
+    console.log('[social-post] X media APPEND response status:', appendResponse.status)
     if (!appendResponse.ok && appendResponse.status !== 204) {
       const errorText = await appendResponse.text()
+      console.log('[social-post] X media APPEND error:', errorText)
       return { success: false, error: `Twitter media APPEND failed: ${errorText}` }
     }
 
@@ -125,8 +133,10 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
       body: finalizeFormData.toString(),
     })
 
+    console.log('[social-post] X media FINALIZE response status:', finalizeResponse.status)
     if (!finalizeResponse.ok) {
       const errorText = await finalizeResponse.text()
+      console.log('[social-post] X media FINALIZE error:', errorText)
       return { success: false, error: `Twitter media FINALIZE failed: ${errorText}` }
     }
 
@@ -148,14 +158,17 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
       body: JSON.stringify(tweetBody),
     })
 
+    console.log('[social-post] X tweet response status:', tweetResponse.status)
     if (!tweetResponse.ok) {
       const errorText = await tweetResponse.text()
+      console.log('[social-post] X tweet error:', errorText)
       return { success: false, error: `Twitter post failed: ${errorText}` }
     }
 
     const tweetData = await tweetResponse.json() as { data?: { id?: string } }
     const tweetId = tweetData.data?.id
     const postUrl = tweetId ? `https://x.com/i/status/${tweetId}` : undefined
+    console.log('[social-post] X tweet posted successfully! ID:', tweetId, 'URL:', postUrl)
 
     return { success: true, postUrl }
   } catch (err) {
@@ -250,6 +263,8 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  console.log('[social-post] Received request:', { imageUrl: body.imageUrl, caption: body.caption?.substring(0, 50), platforms })
+
   const results: Record<string, { success: boolean; error?: string; postUrl?: string }> = {}
 
   const xEntries = platforms.filter(p => p.platform === 'x')
@@ -279,5 +294,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  console.log('[social-post] Final results:', JSON.stringify(results, null, 2))
   return { results }
 })

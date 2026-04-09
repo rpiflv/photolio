@@ -209,7 +209,10 @@ function DashboardPage() {
 
           if (response.ok) {
             const data = await response.json() as { results: Record<string, { success: boolean; error?: string; postUrl?: string }> }
+            console.log('Social post results:', data.results)
             socialResults = data.results
+          } else {
+            console.error('Social post API error:', response.status, await response.text())
           }
         } catch (socialError) {
           console.error('Social media posting error:', socialError)
