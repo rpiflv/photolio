@@ -178,7 +178,6 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
 
 async function postToInstagram(account: InstagramAccountConfig, caption: string, imageUrl: string): Promise<{ success: boolean; error?: string; postUrl?: string }> {
   const { user_id: igUserId, access_token: igAccessToken } = account
-  console.log("imageURL", imageUrl)
   try {
     // Step 1: Create a media container
     console.log('[social-post] Creating IG media container for user:', igUserId, 'imageUrl:', imageUrl)
