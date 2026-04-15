@@ -87,7 +87,10 @@ async function fetchInstagramUsername(account: InstagramAccountConfig): Promise<
 
   try {
     const response = await fetch(
-      `https://graph.facebook.com/v21.0/${account.user_id}?fields=username,name&access_token=${account.access_token}`
+      `https://graph.instagram.com/v25.0/${account.user_id}?fields=username,name`,
+      {
+        headers: { 'Authorization': `Bearer ${account.access_token}` },
+      }
     )
 
     const responseText = await response.text()

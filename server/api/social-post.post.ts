@@ -178,49 +178,58 @@ async function postToTwitter(account: TwitterAccountConfig, caption: string, ima
 
 async function postToInstagram(account: InstagramAccountConfig, caption: string, imageUrl: string): Promise<{ success: boolean; error?: string; postUrl?: string }> {
   const { user_id: igUserId, access_token: igAccessToken } = account
-
+  console.log("imageURL", imageUrl)
   try {
     // Step 1: Create a media container
-    const createUrl = `https://graph.facebook.com/v21.0/${igUserId}/media`
+    console.log('[social-post] Creating IG media container for user:', igUserId, 'imageUrl:', imageUrl)
+    const createUrl = `https://graph.instagram.com/v25.0/${igUserId}/media`
     const createResponse = await fetch(createUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${igAccessToken}`,
+      },
       body: JSON.stringify({
         image_url: imageUrl,
         caption: caption,
-        access_token: igAccessToken,
       }),
     })
 
     if (!createResponse.ok) {
       const errorText = await createResponse.text()
+      console.log('[social-post] IG container creation failed:', createResponse.status, errorText)
       return { success: false, error: `Instagram container creation failed: ${errorText}` }
     }
 
     const createData = await createResponse.json() as { id?: string }
     const containerId = createData.id
+    console.log('[social-post] IG container created:', containerId)
     if (!containerId) {
       return { success: false, error: 'Instagram did not return a container ID' }
     }
 
     // Step 2: Publish the container
-    const publishUrl = `https://graph.facebook.com/v21.0/${igUserId}/media_publish`
+    const publishUrl = `https://graph.instagram.com/v25.0/${igUserId}/media_publish`
     const publishResponse = await fetch(publishUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${igAccessToken}`,
+      },
       body: JSON.stringify({
         creation_id: containerId,
-        access_token: igAccessToken,
       }),
     })
 
     if (!publishResponse.ok) {
       const errorText = await publishResponse.text()
+      console.log('[social-post] IG publish failed:', publishResponse.status, errorText)
       return { success: false, error: `Instagram publish failed: ${errorText}` }
     }
 
     const publishData = await publishResponse.json() as { id?: string }
     const postId = publishData.id
+    console.log('[social-post] IG published successfully! Post ID:', postId)
     const postUrl = postId ? `https://www.instagram.com/p/${postId}/` : undefined
 
     return { success: true, postUrl }
