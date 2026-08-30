@@ -647,8 +647,9 @@ function DashboardPage() {
                       setNewCollectionName('')
                       setNewCollectionDescription('')
                       await fetchCollections()
-                    } catch (error) {
-                      alert('Failed to add collection.')
+                    } catch (error: any) {
+                      console.error('Failed to add collection:', error)
+                      alert(`Failed to add collection: ${error?.message || error || 'Unknown error'}`)
                     }
                   }}
                   className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer shrink-0"
@@ -691,8 +692,9 @@ function DashboardPage() {
                                 setRenamingCollection(null)
                                 await fetchCollections()
                                 await fetchPhotos()
-                              } catch (error) {
-                                alert('Failed to rename collection.')
+                              } catch (error: any) {
+                                console.error('Failed to rename collection:', error)
+                                alert(`Failed to rename collection: ${error?.message || error || 'Unknown error'}`)
                               }
                             }}
                             className="text-xs px-2 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
@@ -746,8 +748,9 @@ function DashboardPage() {
                                   await deleteCollection(col.id)
                                   await fetchCollections()
                                   await fetchPhotos()
-                                } catch (error) {
-                                  alert('Failed to delete collection.')
+                                } catch (error: any) {
+                                  console.error('Failed to delete collection:', error)
+                                  alert(`Failed to delete collection: ${error?.message || error || 'Unknown error'}`)
                                 }
                               }}
                               className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
@@ -1512,6 +1515,74 @@ function DashboardPage() {
                     </select>
                   </div>
 
+                  {/* Collection */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Collection
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddCollectionInUpload(prev => !prev)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                      >
+                        {showQuickAddCollectionInUpload ? 'Cancel' : '+ New Collection'}
+                      </button>
+                    </div>
+
+                    {showQuickAddCollectionInUpload && (
+                      <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                        <input
+                          type="text"
+                          value={quickCollectionNameInUpload}
+                          onChange={(e) => setQuickCollectionNameInUpload(e.target.value)}
+                          placeholder="Collection name"
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={quickCollectionDescInUpload}
+                          onChange={(e) => setQuickCollectionDescInUpload(e.target.value)}
+                          placeholder="Description (optional)"
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!quickCollectionNameInUpload.trim()) return
+                            try {
+                              const created = await addCollection(quickCollectionNameInUpload, quickCollectionDescInUpload)
+                              if (created) {
+                                await fetchCollections()
+                                setUploadForm(prev => ({ ...prev, collection: String(created.id) }))
+                                setQuickCollectionNameInUpload('')
+                                setQuickCollectionDescInUpload('')
+                                setShowQuickAddCollectionInUpload(false)
+                              }
+                            } catch (error: any) {
+                              console.error('Failed to create collection:', error)
+                              alert(`Failed to create collection: ${error?.message || error || 'Unknown error'}`)
+                            }
+                          }}
+                          className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800 cursor-pointer"
+                        >
+                          Create & Select
+                        </button>
+                      </div>
+                    )}
+
+                    <select
+                      value={uploadForm.collection}
+                      onChange={(e) => setUploadForm({ ...uploadForm, collection: e.target.value })}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {collections.length === 0 && <option value="1">Default Collection</option>}
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={String(collection.id)}>{collection.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Location */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1890,9 +1961,60 @@ function DashboardPage() {
 
                   {/* Collection */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Collection
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Collection
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddCollectionInEdit(prev => !prev)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                      >
+                        {showQuickAddCollectionInEdit ? 'Cancel' : '+ New Collection'}
+                      </button>
+                    </div>
+
+                    {showQuickAddCollectionInEdit && (
+                      <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                        <input
+                          type="text"
+                          value={quickCollectionNameInEdit}
+                          onChange={(e) => setQuickCollectionNameInEdit(e.target.value)}
+                          placeholder="Collection name"
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={quickCollectionDescInEdit}
+                          onChange={(e) => setQuickCollectionDescInEdit(e.target.value)}
+                          placeholder="Description (optional)"
+                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (!quickCollectionNameInEdit.trim()) return
+                            try {
+                              const created = await addCollection(quickCollectionNameInEdit, quickCollectionDescInEdit)
+                              if (created) {
+                                await fetchCollections()
+                                setEditForm(prev => ({ ...prev, collection: String(created.id) }))
+                                setQuickCollectionNameInEdit('')
+                                setQuickCollectionDescInEdit('')
+                                setShowQuickAddCollectionInEdit(false)
+                              }
+                            } catch (error: any) {
+                              console.error('Failed to create collection:', error)
+                              alert(`Failed to create collection: ${error?.message || error || 'Unknown error'}`)
+                            }
+                          }}
+                          className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800 cursor-pointer"
+                        >
+                          Create & Select
+                        </button>
+                      </div>
+                    )}
+
                     <select
                       value={editForm.collection}
                       onChange={(e) => setEditForm({ ...editForm, collection: e.target.value })}

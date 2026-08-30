@@ -126,38 +126,38 @@ export async function addCollection(name: string, description?: string): Promise
   const trimmedName = name.trim()
   if (!trimmedName) throw new Error('Collection name is required')
 
-  // Try inserting directly first (supports IDENTITY column)
   const { data, error } = await supabase
     .from('collections')
     .insert({ name: trimmedName, description: description?.trim() || null })
     .select()
     .single()
 
-  if (!error && data) {
-    return data
+  if (error) {
+    console.error('Error adding collection:', error)
+    // Fallback if table doesn't use identity auto-increment
+    const { data: allCollections } = await supabase
+      .from('collections')
+      .select('id')
+      .order('id', { ascending: false })
+      .limit(1)
+
+    const nextId = allCollections && allCollections.length > 0 ? (Number(allCollections[0].id) + 1) : 1
+
+    const fallback = await supabase
+      .from('collections')
+      .insert({ id: nextId, name: trimmedName, description: description?.trim() || null })
+      .select()
+      .single()
+
+    if (fallback.error) {
+      console.error('Error adding collection with explicit id:', fallback.error)
+      throw fallback.error
+    }
+
+    return fallback.data
   }
 
-  // If failed (e.g. non-identity BIGINT primary key), compute next ID
-  const { data: allCollections } = await supabase
-    .from('collections')
-    .select('id')
-    .order('id', { ascending: false })
-    .limit(1)
-
-  const nextId = allCollections && allCollections.length > 0 ? (Number(allCollections[0].id) + 1) : 1
-
-  const fallback = await supabase
-    .from('collections')
-    .insert({ id: nextId, name: trimmedName, description: description?.trim() || null })
-    .select()
-    .single()
-
-  if (fallback.error) {
-    console.error('Error adding collection:', fallback.error)
-    throw fallback.error
-  }
-
-  return fallback.data
+  return data
 }
 
 // Rename a collection
