@@ -1,7 +1,7 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updateCameraImage, updatePhoto, getRawCategories, getCollections, addCategory, renameCategory, deleteCategory } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updateCameraImage, updatePhoto, getRawCategories, getCollections, addCategory, renameCategory, deleteCategory, addCollection, renameCollection, deleteCollection } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
@@ -28,10 +28,15 @@ function DashboardPage() {
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCameraName, setNewCameraName] = useState('')
   const [newCameraImage, setNewCameraImage] = useState<File | null>(null)
+  const [newCollectionName, setNewCollectionName] = useState('')
+  const [newCollectionDescription, setNewCollectionDescription] = useState('')
   const [renamingCategory, setRenamingCategory] = useState<string | null>(null)
   const [renameCategoryName, setRenameCategoryName] = useState('')
   const [renamingCamera, setRenamingCamera] = useState<string | null>(null)
   const [renameCameraName, setRenameCameraName] = useState('')
+  const [renamingCollection, setRenamingCollection] = useState<number | null>(null)
+  const [renameCollectionName, setRenameCollectionName] = useState('')
+  const [renameCollectionDescription, setRenameCollectionDescription] = useState('')
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [showUploadModal, setShowUploadModal] = useState(false)
@@ -41,10 +46,14 @@ function DashboardPage() {
     title: '',
     description: '',
     category: 'other' as string,
+    collection: '1' as string,
     location: '',
     camera: '',
     lens: '',
   })
+  const [showQuickAddCollectionInUpload, setShowQuickAddCollectionInUpload] = useState(false)
+  const [quickCollectionNameInUpload, setQuickCollectionNameInUpload] = useState('')
+  const [quickCollectionDescInUpload, setQuickCollectionDescInUpload] = useState('')
   const [uploadStep, setUploadStep] = useState<1 | 2>(1)
   const [socialAccounts, setSocialAccounts] = useState<{ x: { id: string; label: string }[]; instagram: { id: string; label: string }[] }>({ x: [], instagram: [] })
   const [socialPostForm, setSocialPostForm] = useState({
@@ -56,6 +65,9 @@ function DashboardPage() {
   const [socialPostResults, setSocialPostResults] = useState<Record<string, { success: boolean; error?: string; postUrl?: string }> | null>(null)
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
   const [editForm, setEditForm] = useState({ title: '', category: '', camera: '', collection: '1' })
+  const [showQuickAddCollectionInEdit, setShowQuickAddCollectionInEdit] = useState(false)
+  const [quickCollectionNameInEdit, setQuickCollectionNameInEdit] = useState('')
+  const [quickCollectionDescInEdit, setQuickCollectionDescInEdit] = useState('')
   const [saving, setSaving] = useState(false)
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null)
   const [collectionInfo, setCollectionInfo] = useState<Collection | null>(null)
@@ -78,6 +90,7 @@ function DashboardPage() {
   const [savingAbout, setSavingAbout] = useState(false)
   const [filterCategory, setFilterCategory] = useState('')
   const [filterCamera, setFilterCamera] = useState('')
+  const [filterCollection, setFilterCollection] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchCameras = async () => {
@@ -234,6 +247,7 @@ function DashboardPage() {
         title: uploadForm.title,
         description: uploadForm.description || undefined,
         category: uploadForm.category,
+        collection_id: uploadForm.collection ? Number(uploadForm.collection) : 1,
         location: uploadForm.location || undefined,
         camera: uploadForm.camera || undefined,
         lens: uploadForm.lens || undefined,
@@ -289,6 +303,7 @@ function DashboardPage() {
         title: '',
         description: '',
         category: 'other',
+        collection: '1',
         location: '',
         camera: '',
         lens: '',
@@ -424,21 +439,22 @@ function DashboardPage() {
   const photoCameras = Array.from(new Set(photos.map(p => p.metadata?.cameraId).filter(Boolean))).sort() as string[]
   const cameraNameMap = Object.fromEntries(cameras.map(c => [c.id, c.name]))
 
-  // Filter photos by category and/or camera
+  // Filter photos by category, camera, and collection
   const filteredPhotos = photos.filter(photo => {
     const matchesCategory = !filterCategory || photo.category === filterCategory
     const matchesCamera = !filterCamera || photo.metadata?.cameraId === filterCamera
-    return matchesCategory && matchesCamera
+    const matchesCollection = !filterCollection || String(photo.collectionId ?? 1) === filterCollection
+    return matchesCategory && matchesCamera && matchesCollection
   })
 
   const getPhotoCollectionName = (photo: Photo) => {
-    const collectionId = Number(photo.collectionId ?? photo.collectionName ?? 1) || 1
-    const mappedName = collections.find(collection => String(collection.id) === String(collectionId))?.name
+    const collectionId = Number(photo.collectionId ?? 1) || 1
+    const mappedName = collections.find(collection => Number(collection.id) === collectionId)?.name
     const nameFromPhoto = typeof photo.collectionName === 'string' && !/^\d+$/.test(photo.collectionName.trim())
       ? photo.collectionName
       : undefined
 
-    return mappedName || nameFromPhoto || (collectionId === 1 ? 'Default Collection' : '—')
+    return mappedName || nameFromPhoto || (collectionId === 1 ? 'Default Collection' : `Collection ${collectionId}`)
   }
 
   return (
@@ -500,24 +516,6 @@ function DashboardPage() {
                 <Heart className="h-6 w-6 text-green-600" />
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Collection Info Section */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Collection</h2>
-          </div>
-          <div className="p-6">
-            {collectionInfo ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div><span className="font-medium text-gray-700">Collection ID:</span> <span className="text-gray-600">{collectionInfo.id}</span></div>
-                <div><span className="font-medium text-gray-700">Name:</span> <span className="text-gray-600">{collectionInfo.name || '—'}</span></div>
-                <div className="md:col-span-1"><span className="font-medium text-gray-700">Description:</span> <span className="text-gray-600">{collectionInfo.description || '—'}</span></div>
-              </div>
-            ) : (
-              <p className="text-gray-500 text-sm">No collection info available.</p>
-            )}
           </div>
         </div>
 
@@ -609,8 +607,167 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Categories & Cameras */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Collections, Categories & Cameras */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+        {/* Collections Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Collections</h2>
+          </div>
+          <div className="p-6">
+            {/* Add new collection */}
+            <div className="space-y-2 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1">Collection Name</label>
+                <input
+                  type="text"
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value)}
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                  placeholder="e.g. Street Series"
+                />
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Description (optional)</label>
+                  <input
+                    type="text"
+                    value={newCollectionDescription}
+                    onChange={(e) => setNewCollectionDescription(e.target.value)}
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                    placeholder="Short description"
+                  />
+                </div>
+                <button
+                  onClick={async () => {
+                    if (!newCollectionName.trim()) return
+                    try {
+                      await addCollection(newCollectionName, newCollectionDescription)
+                      setNewCollectionName('')
+                      setNewCollectionDescription('')
+                      await fetchCollections()
+                    } catch (error) {
+                      alert('Failed to add collection.')
+                    }
+                  }}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer shrink-0"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Collection list */}
+            <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
+              {collections.map((col) => {
+                const count = photos.filter(p => Number(p.collectionId ?? 1) === col.id).length
+                return (
+                  <div key={col.id} className="py-2">
+                    {renamingCollection === col.id ? (
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          value={renameCollectionName}
+                          onChange={(e) => setRenameCollectionName(e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                          placeholder="Collection Name"
+                          autoFocus
+                        />
+                        <input
+                          type="text"
+                          value={renameCollectionDescription}
+                          onChange={(e) => setRenameCollectionDescription(e.target.value)}
+                          className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                          placeholder="Description (optional)"
+                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={async () => {
+                              if (!renameCollectionName.trim()) return
+                              try {
+                                await renameCollection(col.id, renameCollectionName, renameCollectionDescription)
+                                setRenamingCollection(null)
+                                await fetchCollections()
+                                await fetchPhotos()
+                              } catch (error) {
+                                alert('Failed to rename collection.')
+                              }
+                            }}
+                            className="text-xs px-2 py-1 bg-gray-900 text-white rounded-md hover:bg-gray-800 cursor-pointer"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => setRenamingCollection(null)}
+                            className="text-xs px-2 py-1 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div className="min-w-0 pr-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-mono px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">
+                              #{col.id}
+                            </span>
+                            <span className="text-sm font-medium text-gray-800 truncate">{col.name}</span>
+                            {col.id === 1 && (
+                              <span className="text-[10px] uppercase tracking-wider bg-blue-50 text-blue-600 font-semibold px-1.5 py-0.5 rounded">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          {col.description && (
+                            <p className="text-xs text-gray-500 truncate mt-0.5">{col.description}</p>
+                          )}
+                          <p className="text-[11px] text-gray-400 mt-0.5">{count} {count === 1 ? 'photo' : 'photos'}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => {
+                              setRenamingCollection(col.id)
+                              setRenameCollectionName(col.name)
+                              setRenameCollectionDescription(col.description || '')
+                            }}
+                            className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          {col.id !== 1 && (
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`Delete collection "${col.name}"? Photos in this collection will be moved to Default Collection.`)) return
+                                try {
+                                  await deleteCollection(col.id)
+                                  await fetchCollections()
+                                  await fetchPhotos()
+                                } catch (error) {
+                                  alert('Failed to delete collection.')
+                                }
+                              }}
+                              className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              {collections.length === 0 && (
+                <p className="text-gray-500 text-sm py-2">No collections yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Categories Section */}
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -906,6 +1063,16 @@ function DashboardPage() {
                   ))}
                 </select>
                 <select
+                  value={filterCollection}
+                  onChange={(e) => setFilterCollection(e.target.value)}
+                  className="text-sm border border-gray-300 rounded-md px-3 py-1.5 text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
+                >
+                  <option value="">All Collections</option>
+                  {collections.map(col => (
+                    <option key={col.id} value={String(col.id)}>{col.name}</option>
+                  ))}
+                </select>
+                <select
                   value={filterCamera}
                   onChange={(e) => setFilterCamera(e.target.value)}
                   className="text-sm border border-gray-300 rounded-md px-3 py-1.5 text-gray-700 bg-white cursor-pointer focus:outline-none focus:ring-1 focus:ring-gray-400"
@@ -915,9 +1082,9 @@ function DashboardPage() {
                     <option key={cam} value={cam}>{cameraNameMap[cam] || cam}</option>
                   ))}
                 </select>
-                {(filterCategory || filterCamera) && (
+                {(filterCategory || filterCollection || filterCamera) && (
                   <button
-                    onClick={() => { setFilterCategory(''); setFilterCamera('') }}
+                    onClick={() => { setFilterCategory(''); setFilterCollection(''); setFilterCamera('') }}
                     className="text-xs text-gray-500 hover:text-gray-700 underline cursor-pointer"
                   >
                     Clear
@@ -1005,6 +1172,9 @@ function DashboardPage() {
                           <button
                             onClick={() => {
                               setEditingPhoto(photo)
+                              setShowQuickAddCollectionInEdit(false)
+                              setQuickCollectionNameInEdit('')
+                              setQuickCollectionDescInEdit('')
                               setEditForm({
                                 title: photo.title,
                                 category: photo.category,

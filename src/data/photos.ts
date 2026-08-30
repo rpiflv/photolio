@@ -121,6 +121,90 @@ export async function getCollections(): Promise<DBCollection[]> {
   return data || []
 }
 
+// Add a new collection
+export async function addCollection(name: string, description?: string): Promise<DBCollection | null> {
+  const trimmedName = name.trim()
+  if (!trimmedName) throw new Error('Collection name is required')
+
+  // Try inserting directly first (supports IDENTITY column)
+  const { data, error } = await supabase
+    .from('collections')
+    .insert({ name: trimmedName, description: description?.trim() || null })
+    .select()
+    .single()
+
+  if (!error && data) {
+    return data
+  }
+
+  // If failed (e.g. non-identity BIGINT primary key), compute next ID
+  const { data: allCollections } = await supabase
+    .from('collections')
+    .select('id')
+    .order('id', { ascending: false })
+    .limit(1)
+
+  const nextId = allCollections && allCollections.length > 0 ? (Number(allCollections[0].id) + 1) : 1
+
+  const fallback = await supabase
+    .from('collections')
+    .insert({ id: nextId, name: trimmedName, description: description?.trim() || null })
+    .select()
+    .single()
+
+  if (fallback.error) {
+    console.error('Error adding collection:', fallback.error)
+    throw fallback.error
+  }
+
+  return fallback.data
+}
+
+// Rename a collection
+export async function renameCollection(id: number, newName: string, description?: string | null): Promise<DBCollection | null> {
+  const updatePayload: { name: string; description?: string | null } = { name: newName.trim() }
+  if (description !== undefined) {
+    updatePayload.description = description ? description.trim() : null
+  }
+
+  const { data, error } = await supabase
+    .from('collections')
+    .update(updatePayload)
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error renaming collection:', error)
+    throw error
+  }
+
+  return data
+}
+
+// Delete a collection
+export async function deleteCollection(id: number): Promise<void> {
+  if (id === 1) {
+    throw new Error('Cannot delete default collection')
+  }
+
+  // Re-assign photos in this collection to default collection (1)
+  await supabase
+    .from('photos')
+    .update({ collection_id: 1 })
+    .eq('collection_id', id)
+
+  const { error } = await supabase
+    .from('collections')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting collection:', error)
+    throw error
+  }
+}
+
 async function getCollectionMap(): Promise<Record<number, string>> {
   const collections = await getCollections()
   return Object.fromEntries(collections.map(collection => [collection.id, collection.name]))
@@ -333,6 +417,8 @@ export async function createPhoto(photoData: {
   thumbnailS3Key?: string
   mediumS3Key?: string
   category: string
+  collection?: number | null
+  collection_id?: number | null
   date: string
   featured?: boolean
   tags?: string[]
@@ -351,6 +437,7 @@ export async function createPhoto(photoData: {
   }
   price?: number
 }): Promise<Photo | null> {
+  const collectionId = photoData.collection_id ?? photoData.collection ?? 1
   const { data, error } = await supabase
     .from('photos')
     .insert({
@@ -361,6 +448,7 @@ export async function createPhoto(photoData: {
       thumbnail_s3_key: photoData.thumbnailS3Key || null,
       medium_s3_key: photoData.mediumS3Key || null,
       category: photoData.category,
+      collection_id: collectionId,
       date: photoData.date,
       featured: photoData.featured || false,
       tags: photoData.tags || [],
@@ -429,6 +517,8 @@ export async function uploadPhoto(
     title: string
     description?: string
     category: string
+    collection?: number | null
+    collection_id?: number | null
     date?: string
     featured?: boolean
     tags?: string[]
@@ -584,10 +674,20 @@ export async function updatePhoto(
     collection_id?: number | null
   }
 ): Promise<Photo | null> {
+  const payload: Record<string, any> = {}
+  if (updates.title !== undefined) payload.title = updates.title
+  if (updates.category !== undefined) payload.category = updates.category
+  if (updates.camera !== undefined) payload.camera = updates.camera
+  if (updates.collection_id !== undefined) {
+    payload.collection_id = updates.collection_id
+  } else if (updates.collection !== undefined) {
+    payload.collection_id = updates.collection
+  }
+
   const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
     supabase
       .from('photos')
-      .update(updates)
+      .update(payload)
       .eq('id', photoId)
       .select('*')
       .single(),
