@@ -1,11 +1,11 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router'
 import { useAdmin } from '../hooks/useAdmin'
 import { useState, useEffect, useRef } from 'react'
-import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updateCameraImage, updatePhoto, getRawCategories, addCategory, renameCategory, deleteCategory } from '../data/photos'
+import { getPhotos, uploadPhoto, deletePhoto, getCameras, addCamera, renameCamera, deleteCamera, updateCameraImage, updatePhoto, getRawCategories, getCollections, addCategory, renameCategory, deleteCategory } from '../data/photos'
 import { getMyContactInfo, updateContactInfo } from '../data/contactInfo'
 import { getMyHomeInfo, updateHomeInfo } from '../data/homeInfo'
 import type { Photo } from '../data/photos'
-import type { Camera, ContactInfo, AboutInfo, Category } from '../lib/supabase'
+import { supabase, type Camera, type ContactInfo, type AboutInfo, type Category, type Collection } from '../lib/supabase'
 import { uploadImageWithPresignedUrl } from '../lib/imageService'
 import { getImageUrl } from '../lib/s3'
 import { BarChart3, Heart, Loader2, Upload, Trash2, X, Pencil, Settings, Plus, Share2, ArrowLeft } from 'lucide-react'
@@ -18,6 +18,12 @@ function DashboardPage() {
   const { isAdmin, loading: adminLoading } = useAdmin()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [cameras, setCameras] = useState<Camera[]>([])
+  const [collections, setCollections] = useState<Collection[]>([{
+    id: 1,
+    name: 'Default Collection',
+    description: null,
+    created_at: '',
+  }])
   const [dbCategories, setDbCategories] = useState<Category[]>([])
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCameraName, setNewCameraName] = useState('')
@@ -49,9 +55,10 @@ function DashboardPage() {
   })
   const [socialPostResults, setSocialPostResults] = useState<Record<string, { success: boolean; error?: string; postUrl?: string }> | null>(null)
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
-  const [editForm, setEditForm] = useState({ title: '', category: '', camera: '' })
+  const [editForm, setEditForm] = useState({ title: '', category: '', camera: '', collection: '1' })
   const [saving, setSaving] = useState(false)
   const [contactInfo, setContactInfo] = useState<ContactInfo | null>(null)
+  const [collectionInfo, setCollectionInfo] = useState<Collection | null>(null)
   const [showContactEdit, setShowContactEdit] = useState(false)
   const [contactForm, setContactForm] = useState({
     email: '',
@@ -91,6 +98,26 @@ function DashboardPage() {
     }
   }
 
+  const fetchCollections = async () => {
+    try {
+      const data = await getCollections()
+      setCollections(data.length > 0 ? data : [{
+        id: 1,
+        name: 'Default Collection',
+        description: null,
+        created_at: '',
+      }])
+    } catch (error) {
+      console.error('Error fetching collections:', error)
+      setCollections([{
+        id: 1,
+        name: 'Default Collection',
+        description: null,
+        created_at: '',
+      }])
+    }
+  }
+
   const fetchContactInfo = async () => {
     try {
       const data = await getMyContactInfo()
@@ -106,6 +133,35 @@ function DashboardPage() {
       setAboutInfo(data)
     } catch (error) {
       console.error('Error fetching home info:', error)
+    }
+  }
+
+  const fetchCollectionInfo = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('collections')
+        .select('*')
+        .eq('id', 1)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      setCollectionInfo(data ?? {
+        id: 1,
+        name: 'Default Collection',
+        description: 'Default photo collection for this portfolio',
+        created_at: new Date().toISOString(),
+      })
+    } catch (error) {
+      console.error('Error fetching collection info:', error)
+      setCollectionInfo({
+        id: 1,
+        name: 'Default Collection',
+        description: 'Default photo collection for this portfolio',
+        created_at: new Date().toISOString(),
+      })
     }
   }
 
@@ -141,8 +197,10 @@ function DashboardPage() {
       fetchPhotos()
       fetchCameras()
       fetchCategories()
+      fetchCollections()
       fetchContactInfo()
       fetchAboutInfo()
+      fetchCollectionInfo()
       fetchSocialAccounts()
     }
   }, [isAdmin, adminLoading])
@@ -282,6 +340,7 @@ function DashboardPage() {
         title: editForm.title,
         category: editForm.category,
         camera: editForm.camera || null,
+        collection: editForm.collection ? Number(editForm.collection) : 1,
       })
 
       await fetchPhotos()
@@ -345,27 +404,6 @@ function DashboardPage() {
     }
   }
 
-  useEffect(() => {
-    const fetchPhotos = async () => {
-      try {
-        const data = await getPhotos()
-        // Sort by likes count descending
-        const sortedPhotos = [...data].sort((a, b) => 
-          (b.likesCount || 0) - (a.likesCount || 0)
-        )
-        setPhotos(sortedPhotos)
-      } catch (error) {
-        console.error('Error fetching photos:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (!adminLoading && isAdmin) {
-      fetchPhotos()
-    }
-  }, [isAdmin, adminLoading])
-
   // Show loading while checking admin status
   if (adminLoading) {
     return (
@@ -392,6 +430,16 @@ function DashboardPage() {
     const matchesCamera = !filterCamera || photo.metadata?.cameraId === filterCamera
     return matchesCategory && matchesCamera
   })
+
+  const getPhotoCollectionName = (photo: Photo) => {
+    const collectionId = Number(photo.collectionId ?? photo.collectionName ?? 1) || 1
+    const mappedName = collections.find(collection => String(collection.id) === String(collectionId))?.name
+    const nameFromPhoto = typeof photo.collectionName === 'string' && !/^\d+$/.test(photo.collectionName.trim())
+      ? photo.collectionName
+      : undefined
+
+    return mappedName || nameFromPhoto || (collectionId === 1 ? 'Default Collection' : '—')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12 px-4 sm:px-6 lg:px-8">
@@ -452,6 +500,24 @@ function DashboardPage() {
                 <Heart className="h-6 w-6 text-green-600" />
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Collection Info Section */}
+        <div className="bg-white rounded-lg shadow overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-gray-900">Collection</h2>
+          </div>
+          <div className="p-6">
+            {collectionInfo ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div><span className="font-medium text-gray-700">Collection ID:</span> <span className="text-gray-600">{collectionInfo.id}</span></div>
+                <div><span className="font-medium text-gray-700">Name:</span> <span className="text-gray-600">{collectionInfo.name || '—'}</span></div>
+                <div className="md:col-span-1"><span className="font-medium text-gray-700">Description:</span> <span className="text-gray-600">{collectionInfo.description || '—'}</span></div>
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No collection info available.</p>
+            )}
           </div>
         </div>
 
@@ -880,6 +946,9 @@ function DashboardPage() {
                       Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Collection
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date
                     </th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -910,8 +979,11 @@ function DashboardPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                          {photo.category}
+                          {dbCategories.find((cat) => cat.id === photo.category)?.name || photo.category}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {getPhotoCollectionName(photo)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(photo.date).toLocaleDateString()}
@@ -937,6 +1009,7 @@ function DashboardPage() {
                                 title: photo.title,
                                 category: photo.category,
                                 camera: photo.metadata?.cameraId || '',
+                                collection: String(photo.collectionId ?? 1),
                               })
                             }}
                             className="text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
@@ -1641,6 +1714,23 @@ function DashboardPage() {
                       <option value="">No camera</option>
                       {cameras.map((cam) => (
                         <option key={cam.id} value={cam.id}>{cam.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Collection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Collection
+                    </label>
+                    <select
+                      value={editForm.collection}
+                      onChange={(e) => setEditForm({ ...editForm, collection: e.target.value })}
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      {collections.length === 0 && <option value="1">Default Collection</option>}
+                      {collections.map((collection) => (
+                        <option key={collection.id} value={String(collection.id)}>{collection.name}</option>
                       ))}
                     </select>
                   </div>

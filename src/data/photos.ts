@@ -1,6 +1,6 @@
 import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } from '../lib/s3'
 import { supabase } from '../lib/supabase'
-import type { Photo as DBPhoto, Camera as DBCamera, Category as DBCategory } from '../lib/supabase'
+import type { Photo as DBPhoto, Camera as DBCamera, Category as DBCategory, Collection as DBCollection } from '../lib/supabase'
 import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
 
 // Query keys for TanStack Query
@@ -13,6 +13,7 @@ export const photoQueryKeys = {
   featured: () => [...photoQueryKeys.all, 'featured'] as const,
   categories: () => ['categories'] as const,
   cameras: () => ['cameras'] as const,
+  collections: () => ['collections'] as const,
 }
 
 export interface Photo {
@@ -25,6 +26,8 @@ export interface Photo {
   category: string
   date: string
   featured?: boolean
+  collectionId?: number
+  collectionName?: string
   dimensions?: {
     width: number
     height: number
@@ -47,11 +50,25 @@ export interface Photo {
   }
 }
 
+function normalizeCollectionId(value: unknown): number {
+  if (value === null || value === undefined || value === '') return 1
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
 // Convert database photo to Photo interface
 // cameraMap resolves camera slug (stored in DB) to display name
-function dbPhotoToPhoto(dbPhoto: DBPhoto, cameraMap?: Record<string, string>): Photo {
+function dbPhotoToPhoto(dbPhoto: DBPhoto, cameraMap?: Record<string, string>, collectionMap?: Record<number, string>): Photo {
   const cameraSlug = dbPhoto.camera || undefined
   const cameraDisplayName = cameraSlug && cameraMap ? (cameraMap[cameraSlug] || cameraSlug) : cameraSlug
+  const rawCollectionId = dbPhoto.collection ?? dbPhoto.collection_id ?? dbPhoto.collections?.id ?? 1
+  const collectionId = normalizeCollectionId(rawCollectionId)
+  const joinedCollectionName = dbPhoto.collections?.name || undefined
+  const collectionName =
+    (joinedCollectionName && !/^\d+$/.test(joinedCollectionName.trim()) ? joinedCollectionName : undefined) ||
+    collectionMap?.[collectionId] ||
+    collectionMap?.[String(collectionId) as unknown as number] ||
+    (collectionId === 1 ? 'Default Collection' : `Collection ${collectionId}`)
   return {
     id: dbPhoto.id,
     title: dbPhoto.title,
@@ -62,6 +79,8 @@ function dbPhotoToPhoto(dbPhoto: DBPhoto, cameraMap?: Record<string, string>): P
     category: dbPhoto.category as any,
     date: dbPhoto.date,
     featured: dbPhoto.featured,
+    collectionId,
+    collectionName,
     thumbnailSrc: getThumbnailUrl(dbPhoto.s3_key),
     s3Key: dbPhoto.s3_key,
     price: dbPhoto.price || undefined,
@@ -87,11 +106,32 @@ async function getCameraMap(): Promise<Record<string, string>> {
   return map
 }
 
+// Get all collections
+export async function getCollections(): Promise<DBCollection[]> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .order('name', { ascending: true })
+
+  if (error) {
+    console.error('Error fetching collections:', error)
+    return []
+  }
+
+  return data || []
+}
+
+async function getCollectionMap(): Promise<Record<number, string>> {
+  const collections = await getCollections()
+  return Object.fromEntries(collections.map(collection => [collection.id, collection.name]))
+}
+
 // Fetch all photos from Supabase
 export async function getPhotos(): Promise<Photo[]> {
-  const [{ data, error }, cameraMap] = await Promise.all([
+  const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
     supabase.from('photos').select('*').order('date', { ascending: false }),
     getCameraMap(),
+    getCollectionMap(),
   ])
 
   if (error) {
@@ -99,7 +139,7 @@ export async function getPhotos(): Promise<Photo[]> {
     return []
   }
 
-  const photos = data.map(p => dbPhotoToPhoto(p, cameraMap))
+  const photos = data.map(p => dbPhotoToPhoto(p, cameraMap, collectionMap))
   
   // Sort by category: other, street, then alphabetically
   const categoryOrder: Record<string, number> = {
@@ -141,9 +181,10 @@ export async function getPhotosByCategory(category: string): Promise<Photo[]> {
     return getPhotos()
   }
 
-  const [{ data, error }, cameraMap] = await Promise.all([
+  const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
     supabase.from('photos').select('*').eq('category', category).order('date', { ascending: false }),
     getCameraMap(),
+    getCollectionMap(),
   ])
 
   if (error) {
@@ -151,14 +192,15 @@ export async function getPhotosByCategory(category: string): Promise<Photo[]> {
     return []
   }
 
-  return data.map(p => dbPhotoToPhoto(p, cameraMap))
+  return data.map(p => dbPhotoToPhoto(p, cameraMap, collectionMap))
 }
 
 // Get photo by ID
 export async function getPhotoById(id: string): Promise<Photo | null> {
-  const [{ data, error }, cameraMap] = await Promise.all([
+  const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
     supabase.from('photos').select('*').eq('id', id).single(),
     getCameraMap(),
+    getCollectionMap(),
   ])
 
   if (error) {
@@ -166,7 +208,7 @@ export async function getPhotoById(id: string): Promise<Photo | null> {
     return null
   }
 
-  return dbPhotoToPhoto(data, cameraMap)
+  return dbPhotoToPhoto(data, cameraMap, collectionMap)
 }
 
 // Get categories with counts
@@ -538,20 +580,26 @@ export async function updatePhoto(
     title?: string
     category?: string
     camera?: string | null
+    collection?: number | null
+    collection_id?: number | null
   }
 ): Promise<Photo | null> {
-  const { data, error } = await supabase
-    .from('photos')
-    .update(updates)
-    .eq('id', photoId)
-    .select()
-    .single()
+  const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
+    supabase
+      .from('photos')
+      .update(updates)
+      .eq('id', photoId)
+      .select('*')
+      .single(),
+    getCameraMap(),
+    getCollectionMap(),
+  ])
 
   if (error) {
     console.error('Error updating photo:', error)
-    throw error
+    return null
   }
 
-  return dbPhotoToPhoto(data)
+  return dbPhotoToPhoto(data, cameraMap, collectionMap)
 }
 

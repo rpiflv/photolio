@@ -10,9 +10,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Types for your database
+export interface Collection {
+  id: number
+  name: string
+  description: string | null
+  created_at: string
+}
+
 export interface Photo {
   id: string
   user_id: string
+  collection?: number | null
+  collection_id?: number | null
+  collections?: {
+    id?: number
+    name?: string
+    description?: string | null
+  } | null
   title: string
   description: string | null
   s3_key: string

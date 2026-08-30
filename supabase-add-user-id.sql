@@ -5,10 +5,52 @@
 BEGIN;
 
 -- =============================================
+-- 0. Ensure default collection exists for photo relations
+-- =============================================
+CREATE TABLE IF NOT EXISTS collections (
+  id BIGINT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO collections (id, name, description)
+VALUES (1, 'Default Collection', 'Default photo collection for this portfolio')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE collections ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read collections" ON collections;
+DROP POLICY IF EXISTS "Owner can manage collections" ON collections;
+
+CREATE POLICY "Allow public read collections" ON collections
+  FOR SELECT TO anon, authenticated USING (true);
+
+CREATE POLICY "Owner can manage collections" ON collections
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+  );
+
+-- =============================================
 -- 1. Add user_id to photos table
 -- =============================================
 ALTER TABLE photos
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+
+ALTER TABLE photos
+ADD COLUMN IF NOT EXISTS collection_id BIGINT REFERENCES collections(id) DEFAULT 1;
+
+UPDATE photos
+SET collection_id = 1
+WHERE collection_id IS NULL;
 
 -- Backfill existing photos with the current admin user
 -- Replace the subquery if you have multiple admins and want a specific one

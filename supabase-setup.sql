@@ -155,12 +155,49 @@ CREATE POLICY "Users can delete own cameras"
   USING (auth.uid() = user_id);
 
 -- =============================================
--- 4. Photos
+-- 4. Collections
+-- =============================================
+
+CREATE TABLE IF NOT EXISTS collections (
+  id BIGINT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+INSERT INTO collections (id, name, description)
+VALUES (1, 'Default Collection', 'Default photo collection for this portfolio')
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE collections ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow public read collections" ON collections;
+DROP POLICY IF EXISTS "Owner can manage collections" ON collections;
+
+CREATE POLICY "Allow public read collections" ON collections
+  FOR SELECT TO anon, authenticated USING (true);
+
+CREATE POLICY "Owner can manage collections" ON collections
+  FOR ALL TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+  );
+
+-- =============================================
+-- 5. Photos
 -- =============================================
 
 CREATE TABLE IF NOT EXISTS photos (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   user_id UUID NOT NULL REFERENCES auth.users(id) DEFAULT auth.uid(),
+  collection_id BIGINT NOT NULL REFERENCES collections(id) DEFAULT 1,
   title TEXT NOT NULL,
   description TEXT,
   s3_key TEXT NOT NULL,
@@ -182,6 +219,7 @@ CREATE TABLE IF NOT EXISTS photos (
 
 ALTER TABLE photos ENABLE ROW LEVEL SECURITY;
 
+COMMENT ON COLUMN photos.collection_id IS 'Foreign key for the collection this photo belongs to';
 COMMENT ON COLUMN photos.thumbnail_s3_key IS 'S3 key for 400px thumbnail version';
 COMMENT ON COLUMN photos.medium_s3_key IS 'S3 key for 1200px medium version';
 COMMENT ON COLUMN photos.dimensions IS 'Original image dimensions {width, height}';

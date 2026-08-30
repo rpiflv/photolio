@@ -387,6 +387,9 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
                 <p className="text-[11px] text-neutral-500 mt-2 uppercase tracking-[0.2em]">
                   {currentPhoto.category}
                 </p>
+                {currentPhoto.collectionName && (
+                  <p className="text-[10px] text-neutral-400 mt-1 uppercase tracking-[0.16em]">{currentPhoto.collectionName}</p>
+                )}
                 {currentPhoto.metadata?.camera && (
                   <p className="text-[10px] text-neutral-600 mt-1">{currentPhoto.metadata.camera}</p>
                 )}
@@ -458,6 +461,9 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
               <p className="text-[11px] text-neutral-500 mt-2 uppercase tracking-[0.2em]">
                 {currentPhoto.category}
               </p>
+              {currentPhoto.collectionName && (
+                <p className="text-[10px] text-neutral-400 mt-1 uppercase tracking-[0.16em]">{currentPhoto.collectionName}</p>
+              )}
               {currentPhoto.metadata?.camera && (
                 <p className="text-[10px] text-neutral-600 mt-1">{currentPhoto.metadata.camera}</p>
               )}

@@ -103,6 +103,9 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
                 <p className="text-white/70 text-xs tracking-wider uppercase mt-1">
                   {photo.category}
                 </p>
+                {photo.collectionName && (
+                  <p className="text-white/60 text-[10px] tracking-[0.18em] uppercase mt-1">{photo.collectionName}</p>
+                )}
                 {photo.metadata?.camera && (
                   <p className="text-white/50 text-[10px] tracking-wide mt-0.5">{photo.metadata.camera}</p>
                 )}
