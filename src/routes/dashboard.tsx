@@ -1524,28 +1524,36 @@ function DashboardPage() {
                       <button
                         type="button"
                         onClick={() => setShowQuickAddCollectionInUpload(prev => !prev)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded cursor-pointer transition-colors"
                       >
-                        {showQuickAddCollectionInUpload ? 'Cancel' : '+ New Collection'}
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>{showQuickAddCollectionInUpload ? 'Cancel' : 'New Collection'}</span>
                       </button>
                     </div>
 
                     {showQuickAddCollectionInUpload && (
                       <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <input
-                          type="text"
-                          value={quickCollectionNameInUpload}
-                          onChange={(e) => setQuickCollectionNameInUpload(e.target.value)}
-                          placeholder="Collection name"
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={quickCollectionDescInUpload}
-                          onChange={(e) => setQuickCollectionDescInUpload(e.target.value)}
-                          placeholder="Description (optional)"
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
-                        />
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">New Collection Name</label>
+                          <input
+                            type="text"
+                            value={quickCollectionNameInUpload}
+                            onChange={(e) => setQuickCollectionNameInUpload(e.target.value)}
+                            placeholder="e.g. Summer Vacation"
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
+                          <input
+                            type="text"
+                            value={quickCollectionDescInUpload}
+                            onChange={(e) => setQuickCollectionDescInUpload(e.target.value)}
+                            placeholder="Optional description"
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={async () => {
@@ -1564,9 +1572,9 @@ function DashboardPage() {
                               alert(`Failed to create collection: ${error?.message || error || 'Unknown error'}`)
                             }
                           }}
-                          className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800 cursor-pointer"
+                          className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md hover:bg-gray-800 cursor-pointer"
                         >
-                          Create & Select
+                          Create & Select Collection
                         </button>
                       </div>
                     )}
@@ -1962,34 +1970,42 @@ function DashboardPage() {
                   {/* Collection */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-sm font-semibold text-gray-700">
                         Collection
                       </label>
                       <button
                         type="button"
                         onClick={() => setShowQuickAddCollectionInEdit(prev => !prev)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-medium cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded cursor-pointer transition-colors"
                       >
-                        {showQuickAddCollectionInEdit ? 'Cancel' : '+ New Collection'}
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>{showQuickAddCollectionInEdit ? 'Cancel' : 'New Collection'}</span>
                       </button>
                     </div>
 
                     {showQuickAddCollectionInEdit && (
                       <div className="mb-3 p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                        <input
-                          type="text"
-                          value={quickCollectionNameInEdit}
-                          onChange={(e) => setQuickCollectionNameInEdit(e.target.value)}
-                          placeholder="Collection name"
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
-                        />
-                        <input
-                          type="text"
-                          value={quickCollectionDescInEdit}
-                          onChange={(e) => setQuickCollectionDescInEdit(e.target.value)}
-                          placeholder="Description (optional)"
-                          className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
-                        />
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">New Collection Name</label>
+                          <input
+                            type="text"
+                            value={quickCollectionNameInEdit}
+                            onChange={(e) => setQuickCollectionNameInEdit(e.target.value)}
+                            placeholder="e.g. Summer Vacation"
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Description (optional)</label>
+                          <input
+                            type="text"
+                            value={quickCollectionDescInEdit}
+                            onChange={(e) => setQuickCollectionDescInEdit(e.target.value)}
+                            placeholder="Optional description"
+                            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400 bg-white"
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={async () => {
@@ -2008,9 +2024,9 @@ function DashboardPage() {
                               alert(`Failed to create collection: ${error?.message || error || 'Unknown error'}`)
                             }
                           }}
-                          className="px-3 py-1 bg-gray-900 text-white text-xs rounded-md hover:bg-gray-800 cursor-pointer"
+                          className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-md hover:bg-gray-800 cursor-pointer"
                         >
-                          Create & Select
+                          Create & Select Collection
                         </button>
                       </div>
                     )}
@@ -2018,7 +2034,7 @@ function DashboardPage() {
                     <select
                       value={editForm.collection}
                       onChange={(e) => setEditForm({ ...editForm, collection: e.target.value })}
-                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm bg-white"
                     >
                       {collections.length === 0 && <option value="1">Default Collection</option>}
                       {collections.map((collection) => (
