@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { deletePhoto, getPhotos, updatePhoto } from '../data/photos'
+import { deletePhoto, getPhotos, replacePhotoImage, updatePhoto } from '../data/photos'
 import type { Photo } from '../data/photos'
 import type { Camera, Collection } from '../lib/supabase'
 import type { EditPhotoForm } from '../routes/dashboard/-types'
@@ -13,6 +13,7 @@ export function useDashboardPhotos(collections: Collection[], cameras: Camera[])
   const [editingPhoto, setEditingPhoto] = useState<Photo | null>(null)
   const [editForm, setEditForm] = useState<EditPhotoForm>({ title: '', category: '', camera: '', collection: '1' })
   const [saving, setSaving] = useState(false)
+  const [replacingImage, setReplacingImage] = useState(false)
 
   const fetchPhotos = useCallback(async () => {
     try {
@@ -78,6 +79,24 @@ export function useDashboardPhotos(collections: Collection[], cameras: Camera[])
     }
   }, [editForm, editingPhoto, fetchPhotos])
 
+  const handleReplaceImage = useCallback(async (file: File) => {
+    if (!editingPhoto) return
+
+    setReplacingImage(true)
+    try {
+      const updated = await replacePhotoImage(editingPhoto.id, file)
+      await fetchPhotos()
+      if (updated) {
+        setEditingPhoto(updated)
+      }
+    } catch (error) {
+      console.error('Error replacing photo image:', error)
+      alert('Failed to replace photo image. Please try again.')
+    } finally {
+      setReplacingImage(false)
+    }
+  }, [editingPhoto, fetchPhotos])
+
   const totalLikes = useMemo(() => photos.reduce((sum, photo) => sum + (photo.likesCount || 0), 0), [photos])
 
   const photoCameras = useMemo(
@@ -133,5 +152,7 @@ export function useDashboardPhotos(collections: Collection[], cameras: Camera[])
     editForm,
     setEditForm,
     saving,
+    handleReplaceImage,
+    replacingImage,
   }
 }

@@ -58,14 +58,14 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
 
   return (
     <>
-      <div className="columns-1 md:columns-2 gap-10 md:gap-14 [column-fill:_balance]">
+      <div className="max-w-6xl mx-auto flex flex-col gap-20 md:gap-28">
         {photos.map((photo) => (
           <div
             key={photo.id}
-            className="group relative mb-10 break-inside-avoid md:mb-14"
+            className="group relative"
           >
             <div
-              className="relative overflow-hidden cursor-pointer bg-[#efedea]  transition-all duration-700 hover:-translate-y-1 shadow-[0_10px_22px_rgba(0,0,0,0.54)]"
+              className="relative overflow-hidden cursor-pointer bg-[#efedea]  transition-all duration-700 hover:-translate-y-1 shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
               onClick={() => handlePhotoOpen(photo)}
               style={photo.dimensions
                 ? { aspectRatio: `${photo.dimensions.width} / ${photo.dimensions.height}` }
@@ -81,7 +81,7 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
               <img
                 src={photo.src}
                 srcSet={photo.srcset}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                sizes="(max-width: 1280px) 100vw, 1152px"
                 alt={photo.alt}
                 loading="lazy"
                 onLoad={() => handleImageLoad(photo.id)}
@@ -97,20 +97,6 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
                 }`}
               />
 
-              {/* Photo Info Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <h3 className="text-white text-sm font-medium tracking-wide">{photo.title}</h3>
-                <p className="text-white/70 text-xs tracking-wider uppercase mt-1">
-                  {photo.category}
-                </p>
-                {photo.collectionName && (
-                  <p className="text-white/60 text-[10px] tracking-[0.18em] uppercase mt-1">{photo.collectionName}</p>
-                )}
-                {photo.metadata?.camera && (
-                  <p className="text-white/50 text-[10px] tracking-wide mt-0.5">{photo.metadata.camera}</p>
-                )}
-              </div>
-
               {/* Favorite Button - Changed to Star */}
               {user && (
                 <button
@@ -125,6 +111,14 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
                     }`}
                   />
                 </button>
+              )}
+            </div>
+
+            {/* Photo Info Below Image */}
+            <div className="mt-4 text-center">
+              <h3 className="text-white text-2xl font-medium tracking-wide">{photo.title}</h3>
+              {photo.metadata?.camera && (
+                <p className="text-neutral-300 text-xs tracking-wide mt-1">{photo.metadata.camera}</p>
               )}
             </div>
           </div>

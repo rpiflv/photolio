@@ -752,3 +752,77 @@ export async function updatePhoto(
   return dbPhotoToPhoto(data, cameraMap, collectionMap)
 }
 
+// Replace a photo's image file: uploads the new file to S3, re-optimizes it,
+// updates the DB with the new S3 keys/dimensions, and cleans up the old S3 objects.
+export async function replacePhotoImage(photoId: string, file: File): Promise<Photo | null> {
+  // Fetch the existing photo to know its category (for the S3 key path) and old S3 keys to clean up
+  const { data: existing, error: fetchError } = await supabase
+    .from('photos')
+    .select('id, category, s3_key, thumbnail_s3_key, medium_s3_key')
+    .eq('id', photoId)
+    .single()
+
+  if (fetchError || !existing) {
+    throw new Error('Photo not found')
+  }
+
+  const oldKeys = [existing.s3_key, existing.thumbnail_s3_key, existing.medium_s3_key].filter(Boolean) as string[]
+
+  const s3Key = `gallery/${existing.category}/${photoId}-${Date.now()}.${file.name.split('.').pop()}`
+
+  // Step 1: Upload the new original to S3
+  await uploadImageWithPresignedUrl(file, s3Key)
+
+  // Step 2: Optimize server-side (generates thumbnail/medium versions + dimensions)
+  const optimizeResponse = await fetch('/api/optimize-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ s3Key }),
+  })
+
+  if (!optimizeResponse.ok) {
+    const errorData = await optimizeResponse.text()
+    console.error('Optimization API error:', errorData)
+    throw new Error(`Image optimization failed: ${optimizeResponse.status}`)
+  }
+
+  const optimized = await optimizeResponse.json() as {
+    thumbnailS3Key: string
+    mediumS3Key: string
+    dimensions: { width: number; height: number }
+  }
+
+  // Step 3: Update the DB record with the new keys/dimensions
+  const [{ data, error: updateError }, cameraMap, collectionMap] = await Promise.all([
+    supabase
+      .from('photos')
+      .update({
+        s3_key: s3Key,
+        thumbnail_s3_key: optimized.thumbnailS3Key,
+        medium_s3_key: optimized.mediumS3Key,
+        dimensions: optimized.dimensions,
+      })
+      .eq('id', photoId)
+      .select('*')
+      .single(),
+    getCameraMap(),
+    getCollectionMap(),
+  ])
+
+  if (updateError) {
+    console.error('Error updating photo image:', updateError)
+    throw updateError
+  }
+
+  // Step 4: Clean up the old S3 objects (best-effort, non-blocking on failure)
+  for (const key of oldKeys) {
+    try {
+      await deleteImageFromS3(key)
+    } catch (cleanupError) {
+      console.warn(`Failed to delete old S3 object ${key}:`, cleanupError)
+    }
+  }
+
+  return dbPhotoToPhoto(data, cameraMap, collectionMap)
+}
+

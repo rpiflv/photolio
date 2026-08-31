@@ -33,8 +33,8 @@ export function CamerasManager({
     <DashboardCard title="Cameras">
       <EditableEntityList
         addForm={
-          <div className="flex items-end gap-3 mb-4">
-            <div className="flex-1">
+          <div className="mb-4 space-y-3">
+            <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Camera Name</label>
               <input
                 type="text"
@@ -44,32 +44,37 @@ export function CamerasManager({
                 placeholder="e.g. Canon EOS R5"
               />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1">Image</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setNewCameraImage(e.target.files?.[0] || null)}
-                className="w-full text-sm text-gray-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-sm file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-              />
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Image</label>
+                <label className="flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 cursor-pointer truncate">
+                  <span className="truncate">{newCameraImage ? newCameraImage.name : 'Choose file'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => setNewCameraImage(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+              <button
+                onClick={async () => {
+                  if (!newCameraName.trim()) return
+                  try {
+                    await createCamera(newCameraName, newCameraImage)
+                    setNewCameraName('')
+                    setNewCameraImage(null)
+                    await fetchCameras()
+                  } catch (error) {
+                    alert('Failed to add camera. It may already exist.')
+                  }
+                }}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add</span>
+              </button>
             </div>
-            <button
-              onClick={async () => {
-                if (!newCameraName.trim()) return
-                try {
-                  await createCamera(newCameraName, newCameraImage)
-                  setNewCameraName('')
-                  setNewCameraImage(null)
-                  await fetchCameras()
-                } catch (error) {
-                  alert('Failed to add camera. It may already exist.')
-                }
-              }}
-              className="flex items-center space-x-1 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-md hover:bg-gray-800 cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add</span>
-            </button>
           </div>
         }
         items={cameras}

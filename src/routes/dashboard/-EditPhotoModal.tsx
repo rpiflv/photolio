@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Loader2 } from 'lucide-react'
 import { Modal } from '../../components/dashboard/Modal'
 import { QuickAddCollection } from '../../components/dashboard/QuickAddCollection'
+import { getImageUrl } from '../../lib/s3'
 import type { Photo } from '../../data/photos'
 import type { Camera, Category, Collection } from '../../lib/supabase'
 import type { EditPhotoForm } from './-types'
@@ -18,6 +19,8 @@ interface EditPhotoModalProps {
   fetchCollections: () => Promise<void>
   createCollection: (name: string, description?: string) => Promise<Collection | null>
   onClose: () => void
+  handleReplaceImage: (file: File) => Promise<void>
+  replacingImage: boolean
 }
 
 export function EditPhotoModal({
@@ -32,6 +35,8 @@ export function EditPhotoModal({
   fetchCollections,
   createCollection,
   onClose,
+  handleReplaceImage,
+  replacingImage,
 }: EditPhotoModalProps) {
   const [showQuickAddCollectionInEdit, setShowQuickAddCollectionInEdit] = useState(false)
   const [quickCollectionNameInEdit, setQuickCollectionNameInEdit] = useState('')
@@ -44,6 +49,39 @@ export function EditPhotoModal({
   return (
     <Modal title="Edit Photo" onClose={onClose} panelClassName="max-w-lg">
       <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+          <div className="flex items-center gap-4">
+            <img
+              src={getImageUrl(editingPhoto.s3Key)}
+              alt={editingPhoto.title}
+              className="h-20 w-20 rounded-lg object-cover border border-gray-200"
+            />
+            <label className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 cursor-pointer">
+              {replacingImage ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <span>Replace image</span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={replacingImage}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  await handleReplaceImage(file)
+                  e.target.value = ''
+                }}
+              />
+            </label>
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
           <input
@@ -123,7 +161,7 @@ export function EditPhotoModal({
         <div className="flex space-x-3 pt-4">
           <button
             onClick={() => void handleEdit()}
-            disabled={!editForm.title || saving}
+            disabled={!editForm.title || saving || replacingImage}
             className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
             {saving ? (
@@ -135,7 +173,7 @@ export function EditPhotoModal({
               <span>Save Changes</span>
             )}
           </button>
-          <button onClick={onClose} disabled={saving} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+          <button onClick={onClose} disabled={saving || replacingImage} className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             Cancel
           </button>
         </div>

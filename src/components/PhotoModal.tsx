@@ -232,16 +232,16 @@ export default function PhotoModal({ photo, photos, isOpen, onClose }: PhotoModa
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
   }, [])
 
-  // Auto-enter fullscreen on mobile when modal opens
+  // Auto-enter fullscreen whenever the modal opens
   useEffect(() => {
-    if (isOpen && isMobile && !isFullScreen) {
+    if (isOpen && !isFullScreen) {
       // Small delay to ensure modal is rendered
       const timer = setTimeout(() => {
         toggleFullScreen()
       }, 100)
       return () => clearTimeout(timer)
     }
-  }, [isOpen, isMobile, isFullScreen])
+  }, [isOpen, isFullScreen])
 
   const toggleFullScreen = async () => {
     try {

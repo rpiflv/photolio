@@ -212,6 +212,8 @@ function DashboardPage() {
           fetchCollections={collections.fetchCollections}
           createCollection={collections.createCollection}
           onClose={photos.closeEditModal}
+          handleReplaceImage={photos.handleReplaceImage}
+          replacingImage={photos.replacingImage}
         />
       </div>
     </div>
