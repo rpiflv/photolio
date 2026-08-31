@@ -192,7 +192,7 @@ export async function deleteCollection(id: number): Promise<void> {
   // Re-assign photos in this collection to default collection (1)
   await supabase
     .from('photos')
-    .update({ collection_id: 1 })
+    .update({ collection_id: 1, collection: 1 })
     .eq('collection_id', id)
 
   const { error } = await supabase
@@ -494,6 +494,7 @@ export async function createPhoto(photoData: {
       thumbnail_s3_key: photoData.thumbnailS3Key || null,
       medium_s3_key: photoData.mediumS3Key || null,
       category: photoData.category,
+      collection: collectionId,
       collection_id: collectionId,
       date: photoData.date,
       featured: photoData.featured || false,
@@ -726,8 +727,10 @@ export async function updatePhoto(
   if (updates.camera !== undefined) payload.camera = updates.camera
   if (updates.collection_id !== undefined) {
     payload.collection_id = updates.collection_id
+    payload.collection = updates.collection_id
   } else if (updates.collection !== undefined) {
     payload.collection_id = updates.collection
+    payload.collection = updates.collection
   }
 
   const [{ data, error }, cameraMap, collectionMap] = await Promise.all([
