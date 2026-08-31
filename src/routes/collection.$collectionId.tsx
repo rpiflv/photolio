@@ -26,13 +26,19 @@ function CollectionGalleryPage() {
     <div className="min-h-screen bg-[#f6f4f2] pt-24 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-light tracking-[0.08em] text-neutral-900 mb-4">
-            {data?.collection.name || 'Collection'}
-          </h1>
-          {data?.collection.description && (
-            <p className="text-base md:text-lg text-neutral-500">
-              {data.collection.description}
-            </p>
+          {data ? (
+            <>
+              <h1 className="text-4xl md:text-5xl font-light tracking-[0.08em] text-neutral-900 mb-4">
+                {data.collection.name}
+              </h1>
+              {data.collection.description && (
+                <p className="text-base md:text-lg text-neutral-500">
+                  {data.collection.description}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="h-12 md:h-16 w-64 mx-auto bg-neutral-200 rounded animate-pulse" />
           )}
         </div>
 
