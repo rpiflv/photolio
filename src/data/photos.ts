@@ -2,7 +2,6 @@ import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } fr
 import { supabase } from '../lib/supabase'
 import type { Photo as DBPhoto, Camera as DBCamera, Category as DBCategory, Collection as DBCollection } from '../lib/supabase'
 import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
-import { slugify } from '../lib/slugify'
 
 // Query keys for TanStack Query
 export const photoQueryKeys = {
@@ -215,7 +214,6 @@ async function getCollectionMap(): Promise<Record<number, string>> {
 export interface CollectionWithCover {
   id: number
   name: string
-  slug: string
   description: string | null
   coverPhoto: Photo | null
   photoCount: number
@@ -236,7 +234,6 @@ export async function getCollectionsWithCovers(): Promise<CollectionWithCover[]>
       return {
         id: collection.id,
         name: collection.name,
-        slug: slugify(collection.name),
         description: collection.description,
         coverPhoto,
         photoCount: collectionPhotos.length,
@@ -245,10 +242,12 @@ export async function getCollectionsWithCovers(): Promise<CollectionWithCover[]>
     .filter(collection => collection.photoCount > 0)
 }
 
-// Get photos belonging to a collection identified by its slug (e.g. "landscapes")
-export async function getPhotosByCollectionSlug(slug: string): Promise<{ collection: DBCollection; photos: Photo[] } | null> {
+// Get photos belonging to a collection identified by its stable ID.
+// (Using the ID rather than a name-derived slug means renaming a
+// collection never breaks existing links/routes to it.)
+export async function getPhotosByCollectionId(collectionId: number): Promise<{ collection: DBCollection; photos: Photo[] } | null> {
   const [collections, photos] = await Promise.all([getCollections(), getPhotos()])
-  const collection = collections.find(c => slugify(c.name) === slug)
+  const collection = collections.find(c => c.id === collectionId)
   if (!collection) return null
 
   return {

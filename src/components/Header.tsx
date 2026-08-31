@@ -48,8 +48,8 @@ export default function Header() {
             {collections.map((collection) => (
               <Link
                 key={collection.id}
-                to="/collection/$collectionSlug"
-                params={{ collectionSlug: collection.slug }}
+                to="/collection/$collectionId"
+                params={{ collectionId: String(collection.id) }}
                 className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 activeProps={{ className: 'text-gray-900 bg-gray-100' }}
               >
@@ -133,8 +133,8 @@ export default function Header() {
               {collections.map((collection) => (
                 <Link
                   key={collection.id}
-                  to="/collection/$collectionSlug"
-                  params={{ collectionSlug: collection.slug }}
+                  to="/collection/$collectionId"
+                  params={{ collectionId: String(collection.id) }}
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >

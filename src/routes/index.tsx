@@ -64,8 +64,8 @@ function HomePage() {
             {collections.map((collection) => (
               <Link
                 key={collection.id}
-                to="/collection/$collectionSlug"
-                params={{ collectionSlug: collection.slug }}
+                to="/collection/$collectionId"
+                params={{ collectionId: String(collection.id) }}
                 className="group relative h-64 md:h-80 overflow-hidden"
               >
                 {collection.coverPhoto ? (

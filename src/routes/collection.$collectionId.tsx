@@ -1,22 +1,24 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import PhotoGrid from '../components/PhotoGrid'
-import { getPhotosByCollectionSlug } from '../data/photos'
+import { getPhotosByCollectionId } from '../data/photos'
 
-export const Route = createFileRoute('/collection/$collectionSlug')({
+export const Route = createFileRoute('/collection/$collectionId')({
   component: CollectionGalleryPage,
 })
 
 function CollectionGalleryPage() {
-  const { collectionSlug } = Route.useParams()
+  const { collectionId } = Route.useParams()
+  const numericId = Number(collectionId)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['collection', collectionSlug],
-    queryFn: () => getPhotosByCollectionSlug(collectionSlug),
+    queryKey: ['collection', numericId],
+    queryFn: () => getPhotosByCollectionId(numericId),
     staleTime: 1000 * 60 * 5,
+    enabled: !Number.isNaN(numericId),
   })
 
-  if (!isLoading && !data) {
+  if (!isLoading && (Number.isNaN(numericId) || !data)) {
     throw notFound()
   }
 
