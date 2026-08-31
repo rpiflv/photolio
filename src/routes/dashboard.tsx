@@ -355,7 +355,7 @@ function DashboardPage() {
         title: editForm.title,
         category: editForm.category,
         camera: editForm.camera || null,
-        collection: editForm.collection ? Number(editForm.collection) : 1,
+        collection_id: editForm.collection ? Number(editForm.collection) : 1,
       })
 
       await fetchPhotos()

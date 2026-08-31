@@ -61,7 +61,7 @@ function normalizeCollectionId(value: unknown): number {
 function dbPhotoToPhoto(dbPhoto: DBPhoto, cameraMap?: Record<string, string>, collectionMap?: Record<number, string>): Photo {
   const cameraSlug = dbPhoto.camera || undefined
   const cameraDisplayName = cameraSlug && cameraMap ? (cameraMap[cameraSlug] || cameraSlug) : cameraSlug
-  const rawCollectionId = dbPhoto.collection ?? dbPhoto.collection_id ?? dbPhoto.collections?.id ?? 1
+  const rawCollectionId = dbPhoto.collection_id ?? dbPhoto.collection ?? dbPhoto.collections?.id ?? 1
   const collectionId = normalizeCollectionId(rawCollectionId)
   const joinedCollectionName = dbPhoto.collections?.name || undefined
   const collectionName =
