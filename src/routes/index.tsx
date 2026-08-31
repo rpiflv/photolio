@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Camera, Eye, Mail } from 'lucide-react'
-import { getFeaturedPhotos, photoQueryKeys } from '../data/photos'
+import { Eye, Mail } from 'lucide-react'
+import { getCollectionsWithCovers, photoQueryKeys } from '../data/photos'
 import { getHomeInfo } from '../data/homeInfo'
 import { useQuery } from '@tanstack/react-query'
 
@@ -10,9 +10,9 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   // Use TanStack Query for caching
-  const { data: featuredPhotos = [] } = useQuery({
-    queryKey: photoQueryKeys.featured(),
-    queryFn: getFeaturedPhotos,
+  const { data: collections = [] } = useQuery({
+    queryKey: photoQueryKeys.collectionsWithCovers(),
+    queryFn: getCollectionsWithCovers,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
   const { data: homeInfo } = useQuery({
@@ -40,45 +40,50 @@ function HomePage() {
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
             {homeInfo?.hero_subtitle || 'Through the lenses of my camera, I tell stories that words cannot express.'}
           </p>
-          <Link
-            to="/gallery"
+          <a
+            href="#collections"
             className="inline-flex items-center px-8 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            View Gallery
+            View Collections
             <Eye className="ml-2 h-5 w-5" />
-          </Link>
+          </a>
         </div>
       </section>
 
-      {/* Featured Photos */}
-      <section className="py-20">
+      {/* Collections */}
+      <section id="collections" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">{homeInfo?.featured_title || 'Featured Work'}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">{homeInfo?.featured_title || 'Collections'}</h2>
             <p className="text-xl text-gray-600">
-              {homeInfo?.featured_subtitle || 'A selection of my favorite photographs'}
+              {homeInfo?.featured_subtitle || 'Explore my work by collection'}
             </p>
           </div>
 
-          {featuredPhotos.length > 0 ? (
+          {collections.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredPhotos.map((photo) => (
+              {collections.map((collection) => (
                 <Link
-                  key={photo.id}
-                  to="/gallery"
+                  key={collection.id}
+                  to="/collection/$collectionSlug"
+                  params={{ collectionSlug: collection.slug }}
                   className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
                 >
                   <div className="aspect-square overflow-hidden">
-                    <img
-                      src={photo.src}
-                      alt={photo.alt}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {collection.coverPhoto ? (
+                      <img
+                        src={collection.coverPhoto.src}
+                        alt={collection.coverPhoto.alt}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200" />
+                    )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                      <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
-                      {photo.description && <p className="text-sm text-gray-200">{photo.description}</p>}
+                      <h3 className="text-lg font-semibold mb-2">{collection.name}</h3>
+                      {collection.description && <p className="text-sm text-gray-200">{collection.description}</p>}
                     </div>
                   </div>
                 </Link>
@@ -86,19 +91,9 @@ function HomePage() {
             </div>
           ) : (
             <div className="text-center text-gray-500">
-              <p className="text-xl">No photos available yet. Upload some photos to get started!</p>
+              <p className="text-xl">No collections available yet. Upload some photos to get started!</p>
             </div>
           )}
-
-          <div className="text-center mt-12">
-            <Link
-              to="/gallery"
-              className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-            >
-              View All Photos
-              <Camera className="ml-2 h-5 w-5" />
-            </Link>
-          </div>
         </div>
       </section>
 

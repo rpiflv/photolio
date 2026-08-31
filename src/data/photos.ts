@@ -2,6 +2,7 @@ import { getImageUrl, getOptimizedImageUrl, getThumbnailUrl, getImageSrcSet } fr
 import { supabase } from '../lib/supabase'
 import type { Photo as DBPhoto, Camera as DBCamera, Category as DBCategory, Collection as DBCollection } from '../lib/supabase'
 import { deleteImageFromS3, uploadImageWithPresignedUrl } from '../lib/imageService'
+import { slugify } from '../lib/slugify'
 
 // Query keys for TanStack Query
 export const photoQueryKeys = {
@@ -14,6 +15,7 @@ export const photoQueryKeys = {
   categories: () => ['categories'] as const,
   cameras: () => ['cameras'] as const,
   collections: () => ['collections'] as const,
+  collectionsWithCovers: () => ['collections', 'withCovers'] as const,
 }
 
 export interface Photo {
@@ -208,6 +210,51 @@ export async function deleteCollection(id: number): Promise<void> {
 async function getCollectionMap(): Promise<Record<number, string>> {
   const collections = await getCollections()
   return Object.fromEntries(collections.map(collection => [collection.id, collection.name]))
+}
+
+export interface CollectionWithCover {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  coverPhoto: Photo | null
+  photoCount: number
+}
+
+// Get all collections along with a random cover photo and photo count for each,
+// used on the public home page / navigation
+export async function getCollectionsWithCovers(): Promise<CollectionWithCover[]> {
+  const [collections, photos] = await Promise.all([getCollections(), getPhotos()])
+
+  return collections
+    .map(collection => {
+      const collectionPhotos = photos.filter(p => p.collectionId === collection.id)
+      const coverPhoto = collectionPhotos.length > 0
+        ? collectionPhotos[Math.floor(Math.random() * collectionPhotos.length)]
+        : null
+
+      return {
+        id: collection.id,
+        name: collection.name,
+        slug: slugify(collection.name),
+        description: collection.description,
+        coverPhoto,
+        photoCount: collectionPhotos.length,
+      }
+    })
+    .filter(collection => collection.photoCount > 0)
+}
+
+// Get photos belonging to a collection identified by its slug (e.g. "landscapes")
+export async function getPhotosByCollectionSlug(slug: string): Promise<{ collection: DBCollection; photos: Photo[] } | null> {
+  const [collections, photos] = await Promise.all([getCollections(), getPhotos()])
+  const collection = collections.find(c => slugify(c.name) === slug)
+  if (!collection) return null
+
+  return {
+    collection,
+    photos: photos.filter(p => p.collectionId === collection.id),
+  }
 }
 
 // Fetch all photos from Supabase
