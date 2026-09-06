@@ -192,6 +192,9 @@ function DashboardPage() {
           cancelUploadStepOne={photoUpload.cancelUploadStepOne}
           handleFileSelect={photoUpload.handleFileSelect}
           handleUpload={() => photoUpload.handleUpload(photos.fetchPhotos)}
+          suggestCaption={photoUpload.suggestCaption}
+          suggestingCaption={photoUpload.suggestingCaption}
+          captionError={photoUpload.captionError}
         />
 
         <SocialPostResultsModal

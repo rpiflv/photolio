@@ -33,6 +33,8 @@ export function usePhotoUpload() {
   const [socialPostForm, setSocialPostForm] = useState(createInitialSocialPostForm)
   const [socialPostResults, setSocialPostResults] = useState<SocialPostResults | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [suggestingCaption, setSuggestingCaption] = useState(false)
+  const [captionError, setCaptionError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const openUploadModal = useCallback(() => {
@@ -60,8 +62,55 @@ export function usePhotoUpload() {
         ...prev,
         title: prev.title || file.name.replace(/\.[^/.]+$/, ''),
       }))
+      setCaptionError(null)
     }
   }, [])
+
+  // Ask the local BLIP captioning service (via /api/caption-image) to suggest
+  // a title, description and alt-text for the currently selected file.
+  // The user stays in control: this only fills the form, it never overwrites
+  // fields the user already edited unless they explicitly ask to regenerate.
+  const suggestCaption = useCallback(async () => {
+    if (!selectedFile) {
+      setCaptionError('Select an image first')
+      return
+    }
+
+    setSuggestingCaption(true)
+    setCaptionError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+
+      const response = await fetch('/api/caption-image', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const detail = await response.text().catch(() => '')
+        throw new Error(detail || `Captioning failed with status ${response.status}`)
+      }
+
+      const { title, description } = await response.json() as {
+        title: string
+        description: string
+        altText: string
+      }
+
+      setUploadForm((prev) => ({
+        ...prev,
+        title: title || prev.title,
+        description: description || prev.description,
+      }))
+    } catch (error) {
+      console.error('Error suggesting caption:', error)
+      const message = error instanceof Error ? error.message : 'Failed to generate AI caption. Please try again.'
+      setCaptionError(message)
+    } finally {
+      setSuggestingCaption(false)
+    }
+  }, [selectedFile])
 
   const handleUpload = useCallback(async (fetchPhotos: () => Promise<void>) => {
     if (!selectedFile || !uploadForm.title) {
@@ -173,5 +222,8 @@ export function usePhotoUpload() {
     cancelUploadStepOne,
     handleFileSelect,
     handleUpload,
+    suggestCaption,
+    suggestingCaption,
+    captionError,
   }
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Loader2, Share2, Upload } from 'lucide-react'
+import { ArrowLeft, Loader2, Share2, Sparkles, Upload } from 'lucide-react'
 import { Modal } from '../../components/dashboard/Modal'
 import { QuickAddCollection } from '../../components/dashboard/QuickAddCollection'
 import type { Category, Collection, Camera } from '../../lib/supabase'
@@ -38,6 +38,9 @@ interface UploadModalProps {
   cancelUploadStepOne: () => void
   handleFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void
   handleUpload: () => Promise<void>
+  suggestCaption: () => Promise<void>
+  suggestingCaption: boolean
+  captionError: string | null
 }
 
 export function UploadModal({
@@ -63,6 +66,9 @@ export function UploadModal({
   cancelUploadStepOne,
   handleFileSelect,
   handleUpload,
+  suggestCaption,
+  suggestingCaption,
+  captionError,
 }: UploadModalProps) {
   const [showQuickAddCollectionInUpload, setShowQuickAddCollectionInUpload] = useState(false)
   const [quickCollectionNameInUpload, setQuickCollectionNameInUpload] = useState('')
@@ -113,6 +119,21 @@ export function UploadModal({
             />
             {selectedFile ? <p className="mt-2 text-sm text-gray-600">Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)</p> : null}
           </div>
+
+          {selectedFile ? (
+            <div>
+              <button
+                type="button"
+                onClick={() => void suggestCaption()}
+                disabled={suggestingCaption}
+                className="flex items-center space-x-2 text-sm px-3 py-1.5 border border-purple-300 text-purple-700 bg-purple-50 hover:bg-purple-100 disabled:opacity-60 disabled:cursor-not-allowed rounded-lg transition-colors cursor-pointer"
+              >
+                {suggestingCaption ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                <span>{suggestingCaption ? 'Analyzing photo…' : 'Generate title & description with AI'}</span>
+              </button>
+              {captionError ? <p className="mt-2 text-xs text-red-600">{captionError}</p> : null}
+            </div>
+          ) : null}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
