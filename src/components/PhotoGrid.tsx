@@ -92,7 +92,7 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
                     img.src = photo.src
                   }
                 }}
-                className={`block w-full h-auto transition-opacity duration-700 group-hover:opacity-90 ${
+                className={`block w-full h-auto transition-opacity duration-700 ${
                   loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
                 }`}
               />
