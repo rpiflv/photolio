@@ -42,7 +42,13 @@ export default defineEventHandler(async (event) => {
 
   const response = await fetch(`${captionApiUrl}/caption`, {
     method: 'POST',
-    headers: { 'Content-Type': contentType },
+    headers: {
+      'Content-Type': contentType,
+      // Only sent when the captioning service is configured to require it.
+      ...(getEnv('CAPTION_API_TOKEN')
+        ? { Authorization: `Bearer ${getEnv('CAPTION_API_TOKEN')}` }
+        : {}),
+    },
     body,
   })
 
