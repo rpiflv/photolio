@@ -10,7 +10,7 @@ const __dirname = dirname(__filename)
 
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 )
 
 async function migrate() {

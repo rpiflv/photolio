@@ -79,10 +79,10 @@ Add this bucket policy to allow public read access to your photos:
 
 2. Fill in your AWS credentials in `.env`:
    ```env
-   VITE_AWS_REGION=us-east-1
-   VITE_AWS_ACCESS_KEY_ID=your-access-key-id
-   VITE_AWS_SECRET_ACCESS_KEY=your-secret-access-key
-   VITE_S3_BUCKET_NAME=your-photo-portfolio-bucket
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=your-access-key-id
+   AWS_SECRET_ACCESS_KEY=your-secret-access-key
+   S3_BUCKET_NAME=your-photo-portfolio-bucket
    
    # Optional: CloudFront domain for better performance
    VITE_CLOUDFRONT_DOMAIN=your-cloudfront-domain.cloudfront.net

@@ -10,8 +10,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Types for your database
+export interface Collection {
+  id: number
+  name: string
+  description: string | null
+  created_at: string
+}
+
 export interface Photo {
   id: string
+  user_id: string
+  collection?: number | null
+  collection_id?: number | null
+  collections?: {
+    id?: number
+    name?: string
+    description?: string | null
+  } | null
   title: string
   description: string | null
   s3_key: string
@@ -41,6 +56,7 @@ export interface Category {
   id: string
   name: string
   description: string
+  user_id: string
 }
 
 export interface Order {
@@ -57,4 +73,40 @@ export interface OrderItem {
   order_id: string
   photo_id: string
   price: number
+}
+
+export interface Camera {
+  id: string
+  name: string
+  image_s3_key: string | null
+  user_id: string
+  created_at: string
+}
+
+export interface ContactInfo {
+  id: string
+  user_id: string
+  email: string | null
+  phone: string | null
+  location: string | null
+  twitter_handle: string | null
+  twitter_url: string | null
+  instagram_handle: string | null
+  instagram_url: string | null
+  heading: string | null
+  subheading: string | null
+  updated_at: string
+}
+
+export interface AboutInfo {
+  id: string
+  user_id: string
+  site_name: string | null
+  hero_title: string | null
+  hero_subtitle: string | null
+  featured_title: string | null
+  featured_subtitle: string | null
+  about_title: string | null
+  about_bio: string | null
+  updated_at: string
 }

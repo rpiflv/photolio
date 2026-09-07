@@ -15,10 +15,10 @@ function getEnv(key: string): string {
 
 function createS3Client() {
   return new S3Client({
-    region: getEnv('VITE_AWS_REGION'),
+    region: getEnv('AWS_REGION'),
     credentials: {
-      accessKeyId: getEnv('VITE_AWS_ACCESS_KEY_ID'),
-      secretAccessKey: getEnv('VITE_AWS_SECRET_ACCESS_KEY'),
+      accessKeyId: getEnv('AWS_ACCESS_KEY_ID'),
+      secretAccessKey: getEnv('AWS_SECRET_ACCESS_KEY'),
     },
   })
 }
@@ -103,7 +103,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const s3Key: string = body.s3Key
-  const bucketName = getEnv('VITE_S3_BUCKET_NAME')
+  const bucketName = getEnv('S3_BUCKET_NAME')
 
   if (!bucketName) {
     throw createError({ statusCode: 500, statusMessage: 'S3 bucket not configured' })
@@ -117,12 +117,14 @@ export default defineEventHandler(async (event) => {
     console.log(`[optimize-image] Downloading original: ${s3Key}`)
     const originalBuffer = await downloadFromS3(s3, bucketName, s3Key)
 
-    // Get original dimensions
-    const metadata = await sharp(originalBuffer).metadata()
+    // Get original dimensions and dominant color
+    const image = sharp(originalBuffer)
+    const metadata = await image.metadata()
     const dimensions = {
       width: metadata.width || 0,
       height: metadata.height || 0,
     }
+
     console.log(`[optimize-image] Original: ${dimensions.width}x${dimensions.height}, ${Math.round(originalBuffer.length / 1024)} KB`)
 
     // 2. Generate optimized versions

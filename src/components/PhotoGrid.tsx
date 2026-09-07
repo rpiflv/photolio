@@ -58,54 +58,69 @@ export default function PhotoGrid({ photos, categoryId }: PhotoGridProps) {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-14">
+      <div className="max-w-6xl mx-auto flex flex-col gap-20 md:gap-28">
         {photos.map((photo) => (
           <div
             key={photo.id}
-            className="group relative aspect-[4/5] overflow-hidden transition-opacity duration-700 cursor-pointer bg-[#efedea]"
-            onClick={() => handlePhotoOpen(photo)}
+            className="group relative"
           >
-            {/* Loading Spinner */}
-            {!loadedImages.has(photo.id) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-[#efedea]">
-                <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-              </div>
-            )}
-            
-            <img
-              src={photo.src}
-              srcSet={photo.srcset}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              alt={photo.alt}
-              loading="lazy"
-              onLoad={() => handleImageLoad(photo.id)}
-              onError={(e) => {
-                // Fallback to main src if thumbnail fails
-                const img = e.target as HTMLImageElement
-                if (img.src !== photo.src) {
-                  img.src = photo.src
-                }
-              }}
-              className={`w-full h-full object-cover transition-opacity duration-700 group-hover:opacity-90 ${
-                loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-            
-            {/* Favorite Button - Changed to Star */}
-            {user && (
-              <button
-                onClick={(e) => handleFavoriteClick(e, photo.id)}
-                className="absolute top-4 right-4 p-2 rounded-full transition-all z-10 bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100"
-              >
-                <Star
-                  className={`h-5 w-5 ${
-                    isFavorited(photo.id)
-                      ? 'fill-neutral-700 text-neutral-700'
-                      : 'text-neutral-600'
-                  }`}
-                />
-              </button>
-            )}
+            <div
+              className="relative overflow-hidden cursor-pointer bg-[#efedea]  transition-all duration-700 hover:-translate-y-1 shadow-[0_4px_10px_rgba(0,0,0,0.25)]"
+              onClick={() => handlePhotoOpen(photo)}
+              style={photo.dimensions
+                ? { aspectRatio: `${photo.dimensions.width} / ${photo.dimensions.height}` }
+                : undefined}
+            >
+              {/* Loading Spinner */}
+              {!loadedImages.has(photo.id) && (
+                <div className="absolute inset-0 flex items-center justify-center bg-[#efedea]">
+                  <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                </div>
+              )}
+
+              <img
+                src={photo.src}
+                srcSet={photo.srcset}
+                sizes="(max-width: 1280px) 100vw, 1152px"
+                alt={photo.alt}
+                loading="lazy"
+                onLoad={() => handleImageLoad(photo.id)}
+                onError={(e) => {
+                  // Fallback to main src if thumbnail fails
+                  const img = e.target as HTMLImageElement
+                  if (img.src !== photo.src) {
+                    img.src = photo.src
+                  }
+                }}
+                className={`block w-full h-auto transition-opacity duration-700 ${
+                  loadedImages.has(photo.id) ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+
+              {/* Favorite Button - Changed to Star */}
+              {user && (
+                <button
+                  onClick={(e) => handleFavoriteClick(e, photo.id)}
+                  className="absolute top-4 right-4 p-2 rounded-full transition-all z-10 bg-white/70 backdrop-blur-sm opacity-0 group-hover:opacity-100"
+                >
+                  <Star
+                    className={`h-5 w-5 ${
+                      isFavorited(photo.id)
+                        ? 'fill-neutral-700 text-neutral-700'
+                        : 'text-neutral-600'
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+
+            {/* Photo Info Below Image */}
+            <div className="mt-4 text-center">
+              <h3 className="text-white text-2xl font-medium tracking-wide">{photo.title}</h3>
+              {photo.metadata?.camera && (
+                <p className="text-neutral-300 text-xs tracking-wide mt-1">{photo.metadata.camera}</p>
+              )}
+            </div>
           </div>
         ))}
       </div>

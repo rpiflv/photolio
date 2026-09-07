@@ -316,10 +316,10 @@ This application is configured for easy deployment to Vercel.
 3. **Set Environment Variables**:
    In Vercel dashboard → Project Settings → Environment Variables, add:
    ```
-   VITE_AWS_REGION
-   VITE_AWS_ACCESS_KEY_ID
-   VITE_AWS_SECRET_ACCESS_KEY
-   VITE_S3_BUCKET_NAME
+   AWS_REGION
+   AWS_ACCESS_KEY_ID
+   AWS_SECRET_ACCESS_KEY
+   S3_BUCKET_NAME
    VITE_CLOUDFRONT_DOMAIN (optional)
    ```
 

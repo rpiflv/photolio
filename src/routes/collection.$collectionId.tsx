@@ -1,0 +1,58 @@
+import { createFileRoute, Link, notFound } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
+import PhotoGrid from '../components/PhotoGrid'
+import { getPhotosByCollectionId } from '../data/photos'
+
+export const Route = createFileRoute('/collection/$collectionId')({
+  component: CollectionGalleryPage,
+})
+
+function CollectionGalleryPage() {
+  const { collectionId } = Route.useParams()
+  const numericId = Number(collectionId)
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['collection', numericId],
+    queryFn: () => getPhotosByCollectionId(numericId),
+    staleTime: 1000 * 60 * 5,
+    enabled: !Number.isNaN(numericId),
+  })
+
+  if (!isLoading && (Number.isNaN(numericId) || !data)) {
+    throw notFound()
+  }
+
+  return (
+    <div className="min-h-screen bg-neutral-800 pt-24 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          {data ? (
+            <>
+              <h1 className="text-4xl md:text-5xl font-light tracking-[0.08em] text-white mb-4">
+                {data.collection.name}
+              </h1>
+              {data.collection.description && (
+                <p className="text-base md:text-lg text-neutral-300">
+                  {data.collection.description}
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="h-12 md:h-16 w-64 mx-auto bg-neutral-700 rounded animate-pulse" />
+          )}
+        </div>
+
+        {data && data.photos.length > 0 ? (
+          <PhotoGrid photos={data.photos} categoryId="all" />
+        ) : !isLoading ? (
+          <div className="text-center text-neutral-300">
+            <p className="text-lg">No photos in this collection yet.</p>
+            <Link to="/" className="inline-block mt-4 text-white underline">
+              Back to home
+            </Link>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}

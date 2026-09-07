@@ -2,7 +2,7 @@
 import 'dotenv/config'
 import { readFileSync, readdirSync, unlinkSync } from 'fs'
 import { join, extname, basename } from 'path'
-import { uploadImageToS3 } from '../src/lib/imageService.js'
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { createClient } from '@supabase/supabase-js'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -11,10 +11,32 @@ import { optimizeImage } from './imageOptimizer.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// S3 client (server-side script — uses non-VITE_ env vars)
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+})
+const BUCKET_NAME = process.env.S3_BUCKET_NAME
+
+async function uploadImageToS3(key, imageBuffer, contentType, metadata) {
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: imageBuffer,
+    ContentType: contentType,
+    Metadata: metadata,
+    CacheControl: 'public, max-age=31536000, immutable',
+  })
+  await s3Client.send(command)
+}
+
 // Supabase client
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 )
 
 // Configuration

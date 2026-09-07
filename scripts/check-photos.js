@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 // Supabase client
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
-  process.env.VITE_SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_KEY
 )
 
 async function checkPhotos() {
@@ -40,8 +40,8 @@ async function checkPhotos() {
     }
     
     // Generate expected URL
-    const bucketName = process.env.VITE_S3_BUCKET_NAME
-    const region = process.env.VITE_AWS_REGION
+    const bucketName = process.env.S3_BUCKET_NAME
+    const region = process.env.AWS_REGION
     if (photo.s3_key) {
       const url = `https://${bucketName}.s3.${region}.amazonaws.com/${photo.s3_key}`
       console.log(`   URL: ${url}`)
@@ -60,8 +60,8 @@ async function checkPhotos() {
   
   // Show bucket configuration
   console.log('\n📦 S3 Configuration:')
-  console.log(`   Bucket: ${process.env.VITE_S3_BUCKET_NAME}`)
-  console.log(`   Region: ${process.env.VITE_AWS_REGION}`)
+  console.log(`   Bucket: ${process.env.S3_BUCKET_NAME}`)
+  console.log(`   Region: ${process.env.AWS_REGION}`)
   console.log(`   CloudFront: ${process.env.VITE_CLOUDFRONT_DOMAIN || 'Not configured'}`)
   
   console.log('\n💡 To fix broken images:')

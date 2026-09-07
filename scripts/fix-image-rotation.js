@@ -12,28 +12,28 @@ const __dirname = dirname(__filename)
 // Load .env from project root
 dotenv.config({ path: join(__dirname, '..', '.env') })
 
-// Access VITE_ prefixed variables directly from process.env
+// Access environment variables (non-VITE_ for secrets)
 const supabaseUrl = process.env.VITE_SUPABASE_URL
-const supabaseServiceKey = process.env.VITE_SUPABASE_SERVICE_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('Missing required environment variables:')
   console.error('VITE_SUPABASE_URL:', supabaseUrl ? 'found' : 'MISSING')
-  console.error('VITE_SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'found' : 'MISSING')
+  console.error('SUPABASE_SERVICE_KEY:', supabaseServiceKey ? 'found' : 'MISSING')
   process.exit(1)
 }
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const s3Client = new S3Client({
-  region: process.env.VITE_AWS_REGION,
+  region: process.env.AWS_REGION,
   credentials: {
-    accessKeyId: process.env.VITE_AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.VITE_AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
 })
 
-const BUCKET_NAME = process.env.VITE_S3_BUCKET_NAME
+const BUCKET_NAME = process.env.S3_BUCKET_NAME
 
 // Images to rotate (title -> degrees)
 const IMAGES_TO_ROTATE = {

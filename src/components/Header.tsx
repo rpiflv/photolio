@@ -3,11 +3,28 @@ import { Aperture, Menu, X, User, LogOut, BarChart3 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdmin } from '../hooks/useAdmin'
+import { useQuery } from '@tanstack/react-query'
+import { getHomeInfo } from '../data/homeInfo'
+import { getCollectionsWithCovers, photoQueryKeys } from '../data/photos'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { user, signOut } = useAuth()
   const { isAdmin } = useAdmin()
+
+  const { data: homeInfo } = useQuery({
+    queryKey: ['homeInfo'],
+    queryFn: getHomeInfo,
+    staleTime: 1000 * 60 * 10,
+  })
+
+  const { data: collections = [] } = useQuery({
+    queryKey: photoQueryKeys.collectionsWithCovers(),
+    queryFn: getCollectionsWithCovers,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const siteName = homeInfo?.site_name || import.meta.env.VITE_SITE_NAME || 'Photo Portfolio'
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md shadow-md">
@@ -16,7 +33,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <Aperture className="h-8 w-8 text-gray-900" />
-            <span className="text-xl font-bold text-gray-900">FR Photo</span>
+            <span className="text-xl font-bold text-gray-900">{siteName}</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -28,13 +45,17 @@ export default function Header() {
             >
               Home
             </Link>
-            <Link
-              to="/gallery"
-              className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              activeProps={{ className: 'text-gray-900 bg-gray-100' }}
-            >
-              Gallery
-            </Link>
+            {collections.map((collection) => (
+              <Link
+                key={collection.id}
+                to="/collection/$collectionId"
+                params={{ collectionId: String(collection.id) }}
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+              >
+                {collection.name}
+              </Link>
+            ))}
             {user && (
               <Link
                 to="/favorites"
@@ -109,13 +130,17 @@ export default function Header() {
               >
                 Home
               </Link>
-              <Link
-                to="/gallery"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Gallery
-              </Link>
+              {collections.map((collection) => (
+                <Link
+                  key={collection.id}
+                  to="/collection/$collectionId"
+                  params={{ collectionId: String(collection.id) }}
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {collection.name}
+                </Link>
+              ))}
               {user && (
                 <Link
                   to="/favorites"

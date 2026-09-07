@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { Camera, Eye, Heart, Mail } from 'lucide-react'
-import { getFeaturedPhotos, photoQueryKeys } from '../data/photos'
+import { Eye, Mail } from 'lucide-react'
+import { getCollectionsWithCovers, photoQueryKeys } from '../data/photos'
+import { getHomeInfo } from '../data/homeInfo'
 import { useQuery } from '@tanstack/react-query'
 
 export const Route = createFileRoute('/')({
@@ -9,10 +10,15 @@ export const Route = createFileRoute('/')({
 
 function HomePage() {
   // Use TanStack Query for caching
-  const { data: featuredPhotos = [] } = useQuery({
-    queryKey: photoQueryKeys.featured(),
-    queryFn: getFeaturedPhotos,
+  const { data: collections = [] } = useQuery({
+    queryKey: photoQueryKeys.collectionsWithCovers(),
+    queryFn: getCollectionsWithCovers,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+  const { data: homeInfo } = useQuery({
+    queryKey: ['homeInfo'],
+    queryFn: getHomeInfo,
+    staleTime: 1000 * 60 * 5,
   })
   return (
     <div className="min-h-screen"> {/* Removed bg-gray-50 */}
@@ -29,81 +35,75 @@ function HomePage() {
         
         <div className="relative text-center text-white px-4 max-w-4xl">
           <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            Capturing Moments
+            {homeInfo?.hero_title || 'Capturing Moments'}
           </h1>
           <p className="text-xl md:text-2xl mb-8 text-gray-200">
-            Through the lenses of my camera, I tell stories that words cannot express.
+            {homeInfo?.hero_subtitle || 'Through the lenses of my camera, I tell stories that words cannot express.'}
           </p>
-          <Link
-            to="/gallery"
+          <a
+            href="#collections"
             className="inline-flex items-center px-8 py-3 bg-white text-gray-900 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            View Gallery
+            View Collections
             <Eye className="ml-2 h-5 w-5" />
-          </Link>
+          </a>
         </div>
       </section>
 
-      {/* Featured Photos */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Work</h2>
-            <p className="text-xl text-gray-600">
-              A selection of my favorite photographs
-            </p>
-          </div>
-
-          {featuredPhotos.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredPhotos.map((photo) => (
-                <Link
-                  key={photo.id}
-                  to="/gallery"
-                  className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
-                >
-                  <div className="aspect-square overflow-hidden">
-                    <img
-                      src={photo.src}
-                      alt={photo.alt}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                      <h3 className="text-lg font-semibold mb-2">{photo.title}</h3>
-                      {photo.description && <p className="text-sm text-gray-200">{photo.description}</p>}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center text-gray-500">
-              <p className="text-xl">No photos available yet. Upload some photos to get started!</p>
-            </div>
-          )}
-
-          <div className="text-center mt-12">
-            <Link
-              to="/gallery"
-              className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition-colors"
-            >
-              View All Photos
-              <Camera className="ml-2 h-5 w-5" />
-            </Link>
-          </div>
+      {/* Collections */}
+      <section id="collections" className="py-20">
+        <div className="text-center mb-16 px-4">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">{homeInfo?.featured_title || 'Collections'}</h2>
+          <p className="text-xl text-gray-600">
+            {homeInfo?.featured_subtitle || 'Explore my work by collection'}
+          </p>
         </div>
+
+        {collections.length > 0 ? (
+          <div className="flex flex-col">
+            {collections.map((collection) => (
+              <Link
+                key={collection.id}
+                to="/collection/$collectionId"
+                params={{ collectionId: String(collection.id) }}
+                className="group relative h-64 md:h-80 overflow-hidden"
+              >
+                {collection.coverPhoto ? (
+                  <img
+                    src={collection.coverPhoto.src}
+                    alt={collection.coverPhoto.alt}
+                    className="absolute inset-0 w-full h-full object-cover opacity-40 group-hover:opacity-55 group-hover:scale-105 transition-all duration-500"
+                  />
+                ) : (
+                  <div className="absolute inset-0 w-full h-full bg-gray-800 opacity-40" />
+                )}
+                <div className="absolute inset-0 bg-black/30 group-hover:bg-black/20 transition-colors duration-500" />
+                <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
+                  <h3 className="text-3xl md:text-5xl font-bold uppercase tracking-widest text-white drop-shadow-lg">
+                    {collection.name}
+                  </h3>
+                  {collection.description && (
+                    <p className="mt-3 text-sm md:text-base text-gray-200 drop-shadow max-w-2xl">
+                      {collection.description}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center text-gray-500 px-4">
+            <p className="text-xl">No collections available yet. Upload some photos to get started!</p>
+          </div>
+        )}
       </section>
 
       {/* About Preview */}
       <section className="py-20 bg-white/90 backdrop-blur-sm"> {/* Changed from bg-white to semi-transparent */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-8">About the Photographer</h2>
+          <h2 className="text-4xl font-bold text-gray-900 mb-8">{homeInfo?.about_title || 'About the Photographer'}</h2>
           <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-            I'm a passionate photographer who believes in the power of visual storytelling. 
-            Every image tells a story, captures an emotion, and preserves a moment in time. 
-            Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.
+            {homeInfo?.about_bio || 'I\'m a passionate photographer who believes in the power of visual storytelling. Every image tells a story, captures an emotion, and preserves a moment in time. Through my lens, I aim to showcase the beauty in everyday moments and extraordinary scenes alike.'}
           </p>
           <Link
             to="/contact"
