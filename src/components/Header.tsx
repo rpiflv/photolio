@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { Aperture, Menu, X, User, LogOut, BarChart3 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useAdmin } from '../hooks/useAdmin'
 import { useQuery } from '@tanstack/react-query'
@@ -9,8 +9,33 @@ import { getCollectionsWithCovers, photoQueryKeys } from '../data/photos'
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isCollectionsOpen, setIsCollectionsOpen] = useState(false)
+  const collectionHoverTimeoutRef = useRef<number | null>(null)
   const { user, signOut } = useAuth()
   const { isAdmin } = useAdmin()
+
+  const clearCollectionHoverTimeout = () => {
+    if (collectionHoverTimeoutRef.current) {
+      window.clearTimeout(collectionHoverTimeoutRef.current)
+      collectionHoverTimeoutRef.current = null
+    }
+  }
+
+  const openCollectionsMenu = () => {
+    clearCollectionHoverTimeout()
+    setIsCollectionsOpen(true)
+  }
+
+  const closeCollectionsMenu = () => {
+    clearCollectionHoverTimeout()
+    collectionHoverTimeoutRef.current = window.setTimeout(() => {
+      setIsCollectionsOpen(false)
+    }, 120)
+  }
+
+  useEffect(() => {
+    return () => clearCollectionHoverTimeout()
+  }, [])
 
   const { data: homeInfo } = useQuery({
     queryKey: ['homeInfo'],
@@ -45,17 +70,54 @@ export default function Header() {
             >
               Home
             </Link>
-            {collections.map((collection) => (
-              <Link
-                key={collection.id}
-                to="/collection/$collectionId"
-                params={{ collectionId: String(collection.id) }}
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-                activeProps={{ className: 'text-gray-900 bg-gray-100' }}
+
+            <div
+              className="relative flex h-16 items-center"
+              onMouseEnter={openCollectionsMenu}
+              onMouseLeave={closeCollectionsMenu}
+              onFocus={openCollectionsMenu}
+              onBlur={closeCollectionsMenu}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCollectionsOpen((prev) => !prev)
+                  clearCollectionHoverTimeout()
+                }}
+                aria-expanded={isCollectionsOpen}
+                aria-haspopup="menu"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200 ease-out hover:bg-gray-50"
               >
-                {collection.name}
-              </Link>
-            ))}
+                Collections
+              </button>
+
+              <div
+                className={`absolute left-0 top-full w-56 origin-top bg-white/90 backdrop-blur-md transition-all duration-200 ease-out ${
+                  isCollectionsOpen ? 'scale-y-100 opacity-100' : 'pointer-events-none scale-y-95 opacity-0'
+                }`}
+                onMouseEnter={openCollectionsMenu}
+                onMouseLeave={closeCollectionsMenu}
+              >
+                <div className="flex flex-col py-1">
+                  {collections.length > 0 ? (
+                    collections.map((collection) => (
+                      <Link
+                        key={collection.id}
+                        to="/collection/$collectionId"
+                        params={{ collectionId: String(collection.id) }}
+                        onClick={() => setIsCollectionsOpen(false)}
+                        className="px-3 py-2.5 text-sm text-gray-700 transition-colors duration-150 hover:bg-gray-50 hover:text-gray-900"
+                      >
+                        {collection.name}
+                      </Link>
+                    ))
+                  ) : (
+                    <span className="px-3 py-2.5 text-sm text-gray-500">No collections yet</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {user && (
               <Link
                 to="/favorites"
@@ -121,30 +183,61 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4 bg-white border-t border-gray-200">
-            <div className="flex flex-col space-y-2">
+          <div className="md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-sm pb-4">
+            <div className="flex flex-col space-y-2 pt-3">
               <Link
                 to="/"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
-              {collections.map((collection) => (
-                <Link
-                  key={collection.id}
-                  to="/collection/$collectionId"
-                  params={{ collectionId: String(collection.id) }}
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
-                  onClick={() => setIsMenuOpen(false)}
+
+              <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCollectionsOpen((prev) => !prev)
+                    clearCollectionHoverTimeout()
+                  }}
+                  aria-expanded={isCollectionsOpen}
+                  className="block w-full px-3 py-2.5 text-left text-base font-medium text-gray-700 transition-colors duration-150 hover:bg-white"
                 >
-                  {collection.name}
-                </Link>
-              ))}
+                  Collections
+                </button>
+
+                {isCollectionsOpen && (
+                  <div
+                    className="border-t border-gray-200 bg-white"
+                    onMouseEnter={openCollectionsMenu}
+                    onMouseLeave={closeCollectionsMenu}
+                  >
+                    {collections.length > 0 ? (
+                      collections.map((collection) => (
+                        <Link
+                          key={collection.id}
+                          to="/collection/$collectionId"
+                          params={{ collectionId: String(collection.id) }}
+                          className="block border-b border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 transition-colors duration-150 last:border-b-0 hover:bg-gray-50 hover:text-gray-900"
+                          onClick={() => {
+                            setIsMenuOpen(false)
+                            setIsCollectionsOpen(false)
+                          }}
+                        >
+                          {collection.name}
+                        </Link>
+                      ))
+                    ) : (
+                      <span className="block border-b border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 last:border-b-0">No collections yet</span>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {user && (
                 <Link
                   to="/favorites"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Favorites
@@ -153,7 +246,7 @@ export default function Header() {
               {isAdmin && (
                 <Link
                   to="/dashboard"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Dashboard
@@ -161,7 +254,7 @@ export default function Header() {
               )}
               <Link
                 to="/contact"
-                className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                className="text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Contact
@@ -175,7 +268,7 @@ export default function Header() {
                       signOut()
                       setIsMenuOpen(false)
                     }}
-                    className="text-left text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                    className="text-left text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                   >
                     Sign out
                   </button>
@@ -183,7 +276,7 @@ export default function Header() {
               ) : (
                 <Link
                   to="/login"
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2.5 rounded-lg text-base font-medium transition-colors duration-150 hover:bg-gray-50"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Sign in

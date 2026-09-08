@@ -13,6 +13,9 @@ const config = defineConfig({
     tanstackStart(),
     viteReact(),
   ],
+  test: {
+    environment: 'jsdom',
+  },
   build: {
     // Raise limit to reduce chunk size warnings for larger bundles.
     chunkSizeWarningLimit: 1500,
